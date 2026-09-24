@@ -1,0 +1,15 @@
+# Go build output
+/bin/
+*.test
+*.out
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+AGENTS.md
+
+# Coverage and profiling output
+coverage.out
+coverprofile.out
+*.prof
