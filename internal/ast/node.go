@@ -1,9 +1,9 @@
 package ast
 
-import "gopython/internal/lexer"
+import "gopython/internal/source"
 
 type Node interface {
-	Position() lexer.Token
+	Position() source.Position
 }
 
 type Statement interface {
@@ -17,10 +17,10 @@ type Expression interface {
 }
 
 type Program struct {
-	Token      lexer.Token
+	Pos        source.Position
 	Statements []Statement
 }
 
-func (node Program) Position() lexer.Token {
-	return node.Token
+func (node Program) Position() source.Position {
+	return node.Pos
 }

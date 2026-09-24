@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"gopython/internal/ast"
@@ -24,26 +25,38 @@ func (parser *Parser) parseOr() (ast.Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		left = ast.BinaryExpression{Token: operator, Left: left, Operator: operator.Type, Right: right}
+		left = ast.BinaryExpression{Pos: positionOf(operator), Left: left, Operator: operator.Type, Right: right}
 	}
 	return left, nil
 }
 
 func (parser *Parser) parseAnd() (ast.Expression, error) {
-	left, err := parser.parseComparison()
+	left, err := parser.parseNot()
 	if err != nil {
 		return nil, err
 	}
 
 	for parser.check(lexer.And) {
 		operator := parser.advance()
-		right, err := parser.parseComparison()
+		right, err := parser.parseNot()
 		if err != nil {
 			return nil, err
 		}
-		left = ast.BinaryExpression{Token: operator, Left: left, Operator: operator.Type, Right: right}
+		left = ast.BinaryExpression{Pos: positionOf(operator), Left: left, Operator: operator.Type, Right: right}
 	}
 	return left, nil
+}
+
+func (parser *Parser) parseNot() (ast.Expression, error) {
+	if parser.check(lexer.Not) {
+		operator := parser.advance()
+		operand, err := parser.parseNot()
+		if err != nil {
+			return nil, err
+		}
+		return ast.UnaryExpression{Pos: positionOf(operator), Operator: operator.Type, Operand: operand}, nil
+	}
+	return parser.parseComparison()
 }
 
 func (parser *Parser) parseComparison() (ast.Expression, error) {
@@ -52,15 +65,27 @@ func (parser *Parser) parseComparison() (ast.Expression, error) {
 		return nil, err
 	}
 
+	if !isComparisonOperator(parser.current().Type) {
+		return left, nil
+	}
+
+	comparison := ast.ComparisonExpression{
+		Pos:  left.Position(),
+		Left: left,
+	}
 	for isComparisonOperator(parser.current().Type) {
 		operator := parser.advance()
 		right, err := parser.parseAdditive()
 		if err != nil {
 			return nil, err
 		}
-		left = ast.BinaryExpression{Token: operator, Left: left, Operator: operator.Type, Right: right}
+		comparison.Comparisons = append(comparison.Comparisons, ast.Comparison{
+			Pos:      positionOf(operator),
+			Operator: operator.Type,
+			Right:    right,
+		})
 	}
-	return left, nil
+	return comparison, nil
 }
 
 func (parser *Parser) parseAdditive() (ast.Expression, error) {
@@ -75,7 +100,7 @@ func (parser *Parser) parseAdditive() (ast.Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		left = ast.BinaryExpression{Token: operator, Left: left, Operator: operator.Type, Right: right}
+		left = ast.BinaryExpression{Pos: positionOf(operator), Left: left, Operator: operator.Type, Right: right}
 	}
 	return left, nil
 }
@@ -92,19 +117,19 @@ func (parser *Parser) parseMultiplicative() (ast.Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		left = ast.BinaryExpression{Token: operator, Left: left, Operator: operator.Type, Right: right}
+		left = ast.BinaryExpression{Pos: positionOf(operator), Left: left, Operator: operator.Type, Right: right}
 	}
 	return left, nil
 }
 
 func (parser *Parser) parseUnary() (ast.Expression, error) {
-	if parser.check(lexer.Not) || parser.check(lexer.Plus) || parser.check(lexer.Minus) {
+	if parser.check(lexer.Plus) || parser.check(lexer.Minus) {
 		operator := parser.advance()
 		operand, err := parser.parseUnary()
 		if err != nil {
 			return nil, err
 		}
-		return ast.UnaryExpression{Token: operator, Operator: operator.Type, Operand: operand}, nil
+		return ast.UnaryExpression{Pos: positionOf(operator), Operator: operator.Type, Operand: operand}, nil
 	}
 	return parser.parsePrimary()
 }
@@ -120,23 +145,23 @@ func (parser *Parser) parsePrimary() (ast.Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		expression = ast.IntegerLiteral{Token: token, Value: value}
+		expression = ast.IntegerLiteral{Pos: positionOf(token), Value: value}
 	case lexer.String:
 		parser.advance()
 		value, err := decodeString(token)
 		if err != nil {
 			return nil, err
 		}
-		expression = ast.StringLiteral{Token: token, Value: value}
+		expression = ast.StringLiteral{Pos: positionOf(token), Value: value}
 	case lexer.True, lexer.False:
 		parser.advance()
-		expression = ast.BooleanLiteral{Token: token, Value: token.Type == lexer.True}
+		expression = ast.BooleanLiteral{Pos: positionOf(token), Value: token.Type == lexer.True}
 	case lexer.None:
 		parser.advance()
-		expression = ast.NoneLiteral{Token: token}
+		expression = ast.NoneLiteral{Pos: positionOf(token)}
 	case lexer.Identifier:
 		parser.advance()
-		expression = ast.Identifier{Token: token, Name: token.Lexeme}
+		expression = ast.Identifier{Pos: positionOf(token), Name: token.Lexeme}
 	case lexer.LeftParenthesis:
 		parser.advance()
 		var err error
@@ -180,7 +205,7 @@ func (parser *Parser) parseCall(callee ast.Expression) (ast.Expression, error) {
 	if _, err := parser.expect(lexer.RightParenthesis); err != nil {
 		return nil, err
 	}
-	return ast.CallExpression{Token: openParen, Callee: callee, Arguments: arguments}, nil
+	return ast.CallExpression{Pos: positionOf(openParen), Callee: callee, Arguments: arguments}, nil
 }
 
 func isComparisonOperator(tokenType lexer.TokenType) bool {
@@ -193,12 +218,12 @@ func isComparisonOperator(tokenType lexer.TokenType) bool {
 }
 
 func parseInteger(token lexer.Token) (int64, error) {
-	var value int64
-	for _, digit := range token.Lexeme {
-		value = value*10 + int64(digit-'0')
-		if value < 0 {
+	value, err := strconv.ParseInt(token.Lexeme, 10, 64)
+	if err != nil {
+		if numberError, ok := err.(*strconv.NumError); ok && numberError.Err == strconv.ErrRange {
 			return 0, Error{Token: token, Message: "integer literal is too large"}
 		}
+		return 0, Error{Token: token, Message: "invalid integer literal"}
 	}
 	return value, nil
 }
@@ -238,4 +263,11 @@ func decodeString(token lexer.Token) (string, error) {
 		}
 	}
 	return value.String(), nil
+}
+
+func expressionError(token lexer.Token) error {
+	return Error{
+		Token:   token,
+		Message: fmt.Sprintf("expected expression, got %s", token.Type),
+	}
 }

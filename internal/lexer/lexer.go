@@ -161,9 +161,9 @@ func (lexer *Lexer) scanToken() error {
 		return nil
 	}
 
-	if unicode.IsDigit(ch) {
+	if isASCIIDigit(ch) {
 		start := lexer.index
-		for lexer.index < len(lexer.chars) && unicode.IsDigit(lexer.chars[lexer.index]) {
+		for lexer.index < len(lexer.chars) && isASCIIDigit(lexer.chars[lexer.index]) {
 			lexer.advance()
 		}
 		lexer.emit(Integer, string(lexer.chars[start:lexer.index]), startLine, startColumn)
@@ -260,6 +260,10 @@ func isIdentifierStart(ch rune) bool {
 
 func isIdentifierPart(ch rune) bool {
 	return isIdentifierStart(ch) || unicode.IsDigit(ch)
+}
+
+func isASCIIDigit(ch rune) bool {
+	return ch >= '0' && ch <= '9'
 }
 
 func isSupportedEscape(ch rune) bool {

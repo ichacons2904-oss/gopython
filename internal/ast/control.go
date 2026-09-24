@@ -1,83 +1,83 @@
 package ast
 
-import "gopython/internal/lexer"
+import "gopython/internal/source"
 
 type IfStatement struct {
-	Token     lexer.Token
-	Condition Expression
-	Body      []Statement
-	Elif      []ElifBranch
-	Else      []Statement
+	Pos          source.Position
+	Condition    Expression
+	Body         []Statement
+	ElifBranches []ElifBranch
+	ElseBody     []Statement
 }
 
-func (node IfStatement) Position() lexer.Token {
-	return node.Token
+func (node IfStatement) Position() source.Position {
+	return node.Pos
 }
 
 func (IfStatement) statementNode() {}
 
 type ElifBranch struct {
-	Token     lexer.Token
+	Pos       source.Position
 	Condition Expression
 	Body      []Statement
 }
 
-func (node ElifBranch) Position() lexer.Token {
-	return node.Token
+func (node ElifBranch) Position() source.Position {
+	return node.Pos
 }
 
 type WhileStatement struct {
-	Token     lexer.Token
+	Pos       source.Position
 	Condition Expression
 	Body      []Statement
 }
 
-func (node WhileStatement) Position() lexer.Token {
-	return node.Token
+func (node WhileStatement) Position() source.Position {
+	return node.Pos
 }
 
 func (WhileStatement) statementNode() {}
 
 type ForStatement struct {
-	Token    lexer.Token
+	Pos      source.Position
 	Target   Identifier
 	Iterable Expression
 	Body     []Statement
 }
 
-func (node ForStatement) Position() lexer.Token {
-	return node.Token
+func (node ForStatement) Position() source.Position {
+	return node.Pos
 }
 
 func (ForStatement) statementNode() {}
 
 type ReturnStatement struct {
-	Token lexer.Token
+	Pos   source.Position
 	Value Expression
 }
 
-func (node ReturnStatement) Position() lexer.Token {
-	return node.Token
+func (node ReturnStatement) Position() source.Position {
+	return node.Pos
 }
 
 func (ReturnStatement) statementNode() {}
 
 type BreakStatement struct {
-	Token lexer.Token
+	Pos source.Position
 }
 
-func (node BreakStatement) Position() lexer.Token {
-	return node.Token
+func (node BreakStatement) Position() source.Position {
+	return node.Pos
 }
 
 func (BreakStatement) statementNode() {}
 
 type ContinueStatement struct {
-	Token lexer.Token
+	Pos source.Position
 }
 
-func (node ContinueStatement) Position() lexer.Token {
-	return node.Token
+func (node ContinueStatement) Position() source.Position {
+	return node.Pos
 }
 
 func (ContinueStatement) statementNode() {}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gopython/internal/lexer"
+	"gopython/internal/source"
 )
 
 type Parser struct {
@@ -81,4 +82,8 @@ func (parser *Parser) expect(tokenType lexer.TokenType) (lexer.Token, error) {
 			current.Type,
 		),
 	}
+}
+
+func positionOf(token lexer.Token) source.Position {
+	return source.Position{Line: token.Line, Column: token.Column}
 }

@@ -1,94 +1,115 @@
 package ast
 
-import "gopython/internal/lexer"
+import (
+	"gopython/internal/lexer"
+	"gopython/internal/source"
+)
 
 type IntegerLiteral struct {
-	Token lexer.Token
+	Pos   source.Position
 	Value int64
 }
 
-func (node IntegerLiteral) Position() lexer.Token {
-	return node.Token
+func (node IntegerLiteral) Position() source.Position {
+	return node.Pos
 }
 
 func (IntegerLiteral) expressionNode() {}
 
 type StringLiteral struct {
-	Token lexer.Token
+	Pos   source.Position
 	Value string
 }
 
-func (node StringLiteral) Position() lexer.Token {
-	return node.Token
+func (node StringLiteral) Position() source.Position {
+	return node.Pos
 }
 
 func (StringLiteral) expressionNode() {}
 
 type BooleanLiteral struct {
-	Token lexer.Token
+	Pos   source.Position
 	Value bool
 }
 
-func (node BooleanLiteral) Position() lexer.Token {
-	return node.Token
+func (node BooleanLiteral) Position() source.Position {
+	return node.Pos
 }
 
 func (BooleanLiteral) expressionNode() {}
 
 type NoneLiteral struct {
-	Token lexer.Token
+	Pos source.Position
 }
 
-func (node NoneLiteral) Position() lexer.Token {
-	return node.Token
+func (node NoneLiteral) Position() source.Position {
+	return node.Pos
 }
 
 func (NoneLiteral) expressionNode() {}
 
 type Identifier struct {
-	Token lexer.Token
-	Name  string
+	Pos  source.Position
+	Name string
 }
 
-func (node Identifier) Position() lexer.Token {
-	return node.Token
+func (node Identifier) Position() source.Position {
+	return node.Pos
 }
 
 func (Identifier) expressionNode() {}
 
 type UnaryExpression struct {
-	Token    lexer.Token
+	Pos      source.Position
 	Operator lexer.TokenType
 	Operand  Expression
 }
 
-func (node UnaryExpression) Position() lexer.Token {
-	return node.Token
+func (node UnaryExpression) Position() source.Position {
+	return node.Pos
 }
 
 func (UnaryExpression) expressionNode() {}
 
 type BinaryExpression struct {
-	Token    lexer.Token
+	Pos      source.Position
 	Left     Expression
 	Operator lexer.TokenType
 	Right    Expression
 }
 
-func (node BinaryExpression) Position() lexer.Token {
-	return node.Token
+func (node BinaryExpression) Position() source.Position {
+	return node.Pos
 }
 
 func (BinaryExpression) expressionNode() {}
 
+type ComparisonExpression struct {
+	Pos         source.Position
+	Left        Expression
+	Comparisons []Comparison
+}
+
+type Comparison struct {
+	Pos      source.Position
+	Operator lexer.TokenType
+	Right    Expression
+}
+
+func (node ComparisonExpression) Position() source.Position {
+	return node.Pos
+}
+
+func (ComparisonExpression) expressionNode() {}
+
 type CallExpression struct {
-	Token     lexer.Token
+	Pos       source.Position
 	Callee    Expression
 	Arguments []Expression
 }
 
-func (node CallExpression) Position() lexer.Token {
-	return node.Token
+func (node CallExpression) Position() source.Position {
+	return node.Pos
 }
 
 func (CallExpression) expressionNode() {}

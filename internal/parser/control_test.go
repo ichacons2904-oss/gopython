@@ -29,14 +29,14 @@ func TestParseIfElifElse(t *testing.T) {
 	if len(statement.Body) != 1 {
 		t.Fatalf("if body length = %d, want 1", len(statement.Body))
 	}
-	if len(statement.Elif) != 1 {
-		t.Fatalf("elif count = %d, want 1", len(statement.Elif))
+	if len(statement.ElifBranches) != 1 {
+		t.Fatalf("elif count = %d, want 1", len(statement.ElifBranches))
 	}
-	if len(statement.Elif[0].Body) != 1 {
-		t.Fatalf("elif body length = %d, want 1", len(statement.Elif[0].Body))
+	if len(statement.ElifBranches[0].Body) != 1 {
+		t.Fatalf("elif body length = %d, want 1", len(statement.ElifBranches[0].Body))
 	}
-	if len(statement.Else) != 1 {
-		t.Fatalf("else body length = %d, want 1", len(statement.Else))
+	if len(statement.ElseBody) != 1 {
+		t.Fatalf("else body length = %d, want 1", len(statement.ElseBody))
 	}
 }
 

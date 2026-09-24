@@ -1,15 +1,15 @@
 package ast
 
-import "gopython/internal/lexer"
+import "gopython/internal/source"
 
 type Assignment struct {
-	Token lexer.Token
+	Pos   source.Position
 	Name  Identifier
 	Value Expression
 }
 
-func (node Assignment) Position() lexer.Token {
-	return node.Token
+func (node Assignment) Position() source.Position {
+	return node.Pos
 }
 
 func (Assignment) statementNode() {}
@@ -18,21 +18,21 @@ type ExpressionStatement struct {
 	Expression Expression
 }
 
-func (node ExpressionStatement) Position() lexer.Token {
+func (node ExpressionStatement) Position() source.Position {
 	return node.Expression.Position()
 }
 
 func (ExpressionStatement) statementNode() {}
 
 type FunctionDefinition struct {
-	Token      lexer.Token
+	Pos        source.Position
 	Name       Identifier
 	Parameters []Identifier
 	Body       []Statement
 }
 
-func (node FunctionDefinition) Position() lexer.Token {
-	return node.Token
+func (node FunctionDefinition) Position() source.Position {
+	return node.Pos
 }
 
 func (FunctionDefinition) statementNode() {}

@@ -165,6 +165,16 @@ func TestLexReportsErrors(t *testing.T) {
 	}
 }
 
+func TestLexRejectsNonASCIIDigit(t *testing.T) {
+	_, err := New("١").Lex()
+	if err == nil {
+		t.Fatal("Lex() returned nil error")
+	}
+	if !strings.Contains(err.Error(), "unexpected character") {
+		t.Fatalf("error = %q, want unexpected character", err)
+	}
+}
+
 func tokenTypes(tokens []Token) []TokenType {
 	types := make([]TokenType, len(tokens))
 	for index, token := range tokens {
