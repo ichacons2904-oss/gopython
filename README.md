@@ -1,14 +1,8 @@
 # GoPython
 
-GoPython is an educational interpreter for a deliberately small subset of
-Python, implemented in Go.
+GoPython es un intérprete minimal de Python escrito en Go
 
-The project context, language contract, architecture, and delivery plan live
-in the sibling [`LengComp`](../LengComp) repository. Start with its
-[`wiki/index.md`](../LengComp/wiki/index.md), then read the pages relevant to
-the change you are making.
-
-## Repository layout
+## layout
 
 ```text
 cmd/gopython/      command-line entry point
@@ -22,16 +16,11 @@ examples/         readable example programs
 testdata/         programs and expected behavior for comparisons
 ```
 
-The interpreter pipeline is being built incrementally:
+Pipeline
 
 ```text
 source → lexer → parser/AST → evaluator/runtime → output
 ```
-
-## Current status
-
-The initial lexer slice is implemented. The parser, runtime, and evaluator are
-still scaffolding.
 
 ## Commands
 
