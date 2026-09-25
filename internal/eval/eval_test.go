@@ -205,6 +205,121 @@ func TestEvaluateReportsIncompatibleComparison(t *testing.T) {
 	}
 }
 
+func TestEvaluateIfElifElse(t *testing.T) {
+	program := parseProgram(t, "if value < 0:\n    result = \"negative\"\nelif value == 0:\n    result = \"zero\"\nelse:\n    result = \"positive\"\nresult\n")
+
+	tests := []struct {
+		name  string
+		value int64
+		want  string
+	}{
+		{name: "if branch", value: -1, want: "negative"},
+		{name: "elif branch", value: 0, want: "zero"},
+		{name: "else branch", value: 1, want: "positive"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			environment := object.NewEnvironment(nil)
+			environment.Set("value", object.Integer{Value: test.value})
+
+			result, err := Evaluate(program, environment)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := object.String{Value: test.want}
+			if result != want {
+				t.Fatalf("result = %#v, want %#v", result, want)
+			}
+		})
+	}
+}
+
+func TestEvaluateIfSkipsInactiveBranch(t *testing.T) {
+	program := parseProgram(t, "if False:\n    missing\nelse:\n    42\n")
+
+	result, err := Evaluate(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.Integer{Value: 42}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
+func TestEvaluateNestedIf(t *testing.T) {
+	program := parseProgram(t, "if True:\n    if False:\n        1\n    else:\n        2\n")
+
+	result, err := Evaluate(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.Integer{Value: 2}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
+func TestEvaluateWhile(t *testing.T) {
+	program := parseProgram(t, "x = 0\nwhile x < 3:\n    x = x + 1\nx\n")
+
+	result, err := Evaluate(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.Integer{Value: 3}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
+func TestEvaluateWhileSkipsFalseBody(t *testing.T) {
+	program := parseProgram(t, "while False:\n    missing\n42\n")
+
+	result, err := Evaluate(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.Integer{Value: 42}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
+func TestEvaluateBreakExitsNearestLoop(t *testing.T) {
+	program := parseProgram(t, "x = 0\nwhile True:\n    x = x + 1\n    if x == 3:\n        break\nx\n")
+
+	result, err := Evaluate(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.Integer{Value: 3}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
+func TestEvaluateContinueStartsNextIteration(t *testing.T) {
+	program := parseProgram(t, "x = 0\ntotal = 0\nwhile x < 5:\n    x = x + 1\n    if x == 3:\n        continue\n    total = total + x\ntotal\n")
+
+	result, err := Evaluate(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.Integer{Value: 12}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
 func parseProgram(t *testing.T, source string) *ast.Program {
 	t.Helper()
 
