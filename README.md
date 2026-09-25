@@ -11,8 +11,8 @@ internal/ast/     AST node definitions ✅
 internal/parser/  parser and AST construction ✅
 internal/object/  runtime values and environments
 internal/eval/    evaluator
-internal/repl/    optional interactive loop
-examples/         readable example programs
+internal/repl/    interactive loop
+examples/         python examples
 ```
 
 Pipeline
