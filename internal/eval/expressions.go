@@ -10,23 +10,23 @@ import (
 
 func evaluateExpression(expression ast.Expression, environment *object.Environment) (object.Value, error) {
 	switch expression := expression.(type) {
-	case ast.IntegerLiteral:
+	case *ast.IntegerLiteral:
 		return object.Integer{Value: expression.Value}, nil
-	case ast.StringLiteral:
+	case *ast.StringLiteral:
 		return object.String{Value: expression.Value}, nil
-	case ast.BooleanLiteral:
+	case *ast.BooleanLiteral:
 		return object.Boolean{Value: expression.Value}, nil
-	case ast.NoneLiteral:
+	case *ast.NoneLiteral:
 		return object.None{}, nil
-	case ast.Identifier:
+	case *ast.Identifier:
 		return evaluateIdentifier(expression, environment)
-	case ast.UnaryExpression:
+	case *ast.UnaryExpression:
 		return evaluateUnary(expression, environment)
-	case ast.BinaryExpression:
+	case *ast.BinaryExpression:
 		return evaluateBinary(expression, environment)
-	case ast.ComparisonExpression:
+	case *ast.ComparisonExpression:
 		return evaluateComparison(expression, environment)
-	case ast.CallExpression:
+	case *ast.CallExpression:
 		return evaluateCall(expression, environment)
 	default:
 		return nil, Error{
@@ -37,7 +37,7 @@ func evaluateExpression(expression ast.Expression, environment *object.Environme
 	}
 }
 
-func evaluateIdentifier(expression ast.Identifier, environment *object.Environment) (object.Value, error) {
+func evaluateIdentifier(expression *ast.Identifier, environment *object.Environment) (object.Value, error) {
 	value, ok := environment.Get(expression.Name)
 	if !ok {
 		return nil, Error{
@@ -49,7 +49,7 @@ func evaluateIdentifier(expression ast.Identifier, environment *object.Environme
 	return value, nil
 }
 
-func evaluateUnary(expression ast.UnaryExpression, environment *object.Environment) (object.Value, error) {
+func evaluateUnary(expression *ast.UnaryExpression, environment *object.Environment) (object.Value, error) {
 	operand, err := evaluateExpression(expression.Operand, environment)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func evaluateUnary(expression ast.UnaryExpression, environment *object.Environme
 	}
 }
 
-func evaluateBinary(expression ast.BinaryExpression, environment *object.Environment) (object.Value, error) {
+func evaluateBinary(expression *ast.BinaryExpression, environment *object.Environment) (object.Value, error) {
 	if expression.Operator == lexer.And || expression.Operator == lexer.Or {
 		return evaluateLogical(expression, environment)
 	}

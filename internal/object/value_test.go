@@ -22,8 +22,8 @@ func TestPrimitiveValues(t *testing.T) {
 			if got := test.value.Type(); got != test.wantType {
 				t.Fatalf("Type() = %q, want %q", got, test.wantType)
 			}
-			if got := test.value.Inspect(); got != test.wantText {
-				t.Fatalf("Inspect() = %q, want %q", got, test.wantText)
+			if got := test.value.Display(); got != test.wantText {
+				t.Fatalf("Display() = %q, want %q", got, test.wantText)
 			}
 		})
 	}

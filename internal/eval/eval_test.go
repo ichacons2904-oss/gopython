@@ -15,7 +15,7 @@ func TestEvaluateArithmeticAndAssignment(t *testing.T) {
 	program := parseProgram(t, "x = 2 + 3 * 4\nx\n")
 	environment := object.NewEnvironment(nil)
 
-	result, err := Evaluate(program, environment)
+	result, err := EvaluateProgram(program, environment)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestEvaluateArithmeticAndAssignment(t *testing.T) {
 func TestEvaluateUnaryAndStringConcatenation(t *testing.T) {
 	program := parseProgram(t, "x = -7\ny = \"hello\" + \" world\"\ny\n")
 
-	result, err := Evaluate(program, nil)
+	result, err := EvaluateProgram(program, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,9 +51,9 @@ func TestEvaluateUnaryAndStringConcatenation(t *testing.T) {
 func TestEvaluateReportsUndefinedName(t *testing.T) {
 	program := parseProgram(t, "missing\n")
 
-	_, err := Evaluate(program, nil)
+	_, err := EvaluateProgram(program, nil)
 	if err == nil {
-		t.Fatal("Evaluate() returned nil error")
+		t.Fatal("EvaluateProgram() returned nil error")
 	}
 
 	evaluationError, ok := err.(Error)
@@ -71,9 +71,9 @@ func TestEvaluateReportsUndefinedName(t *testing.T) {
 func TestEvaluateReportsDivisionByZero(t *testing.T) {
 	program := parseProgram(t, "10 / 0\n")
 
-	_, err := Evaluate(program, nil)
+	_, err := EvaluateProgram(program, nil)
 	if err == nil {
-		t.Fatal("Evaluate() returned nil error")
+		t.Fatal("EvaluateProgram() returned nil error")
 	}
 
 	evaluationError, ok := err.(Error)
@@ -88,9 +88,9 @@ func TestEvaluateReportsDivisionByZero(t *testing.T) {
 func TestEvaluateReportsIncompatibleOperands(t *testing.T) {
 	program := parseProgram(t, "\"hello\" - \"world\"\n")
 
-	_, err := Evaluate(program, nil)
+	_, err := EvaluateProgram(program, nil)
 	if err == nil {
-		t.Fatal("Evaluate() returned nil error")
+		t.Fatal("EvaluateProgram() returned nil error")
 	}
 
 	evaluationError, ok := err.(Error)
@@ -118,7 +118,7 @@ func TestEvaluateComparisons(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := Evaluate(parseProgram(t, test.source), nil)
+			result, err := EvaluateProgram(parseProgram(t, test.source), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -149,7 +149,7 @@ func TestEvaluateNotUsesTruthiness(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := Evaluate(parseProgram(t, test.source), nil)
+			result, err := EvaluateProgram(parseProgram(t, test.source), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -179,7 +179,7 @@ func TestEvaluateLogicalOperatorsShortCircuit(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := Evaluate(parseProgram(t, test.source), nil)
+			result, err := EvaluateProgram(parseProgram(t, test.source), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -193,9 +193,9 @@ func TestEvaluateLogicalOperatorsShortCircuit(t *testing.T) {
 func TestEvaluateReportsIncompatibleComparison(t *testing.T) {
 	program := parseProgram(t, "1 < \"one\"\n")
 
-	_, err := Evaluate(program, nil)
+	_, err := EvaluateProgram(program, nil)
 	if err == nil {
-		t.Fatal("Evaluate() returned nil error")
+		t.Fatal("EvaluateProgram() returned nil error")
 	}
 
 	evaluationError, ok := err.(Error)
@@ -225,7 +225,7 @@ func TestEvaluateIfElifElse(t *testing.T) {
 			environment := object.NewEnvironment(nil)
 			environment.Set("value", object.Integer{Value: test.value})
 
-			result, err := Evaluate(program, environment)
+			result, err := EvaluateProgram(program, environment)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -241,7 +241,7 @@ func TestEvaluateIfElifElse(t *testing.T) {
 func TestEvaluateIfSkipsInactiveBranch(t *testing.T) {
 	program := parseProgram(t, "if False:\n    missing\nelse:\n    42\n")
 
-	result, err := Evaluate(program, nil)
+	result, err := EvaluateProgram(program, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +255,7 @@ func TestEvaluateIfSkipsInactiveBranch(t *testing.T) {
 func TestEvaluateNestedIf(t *testing.T) {
 	program := parseProgram(t, "if True:\n    if False:\n        1\n    else:\n        2\n")
 
-	result, err := Evaluate(program, nil)
+	result, err := EvaluateProgram(program, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,7 +269,7 @@ func TestEvaluateNestedIf(t *testing.T) {
 func TestEvaluateWhile(t *testing.T) {
 	program := parseProgram(t, "x = 0\nwhile x < 3:\n    x = x + 1\nx\n")
 
-	result, err := Evaluate(program, nil)
+	result, err := EvaluateProgram(program, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +283,7 @@ func TestEvaluateWhile(t *testing.T) {
 func TestEvaluateWhileSkipsFalseBody(t *testing.T) {
 	program := parseProgram(t, "while False:\n    missing\n42\n")
 
-	result, err := Evaluate(program, nil)
+	result, err := EvaluateProgram(program, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -297,7 +297,7 @@ func TestEvaluateWhileSkipsFalseBody(t *testing.T) {
 func TestEvaluateBreakExitsNearestLoop(t *testing.T) {
 	program := parseProgram(t, "x = 0\nwhile True:\n    x = x + 1\n    if x == 3:\n        break\nx\n")
 
-	result, err := Evaluate(program, nil)
+	result, err := EvaluateProgram(program, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,7 +311,7 @@ func TestEvaluateBreakExitsNearestLoop(t *testing.T) {
 func TestEvaluateContinueStartsNextIteration(t *testing.T) {
 	program := parseProgram(t, "x = 0\ntotal = 0\nwhile x < 5:\n    x = x + 1\n    if x == 3:\n        continue\n    total = total + x\ntotal\n")
 
-	result, err := Evaluate(program, nil)
+	result, err := EvaluateProgram(program, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -327,7 +327,7 @@ func TestEvaluateForOverRange(t *testing.T) {
 	environment := object.NewEnvironment(nil)
 	builtin.Register(environment, nil)
 
-	result, err := Evaluate(program, environment)
+	result, err := EvaluateProgram(program, environment)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -343,7 +343,7 @@ func TestEvaluateForBreakAndContinue(t *testing.T) {
 	environment := object.NewEnvironment(nil)
 	builtin.Register(environment, nil)
 
-	result, err := Evaluate(program, environment)
+	result, err := EvaluateProgram(program, environment)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -357,9 +357,9 @@ func TestEvaluateForBreakAndContinue(t *testing.T) {
 func TestEvaluateForRejectsNonIterable(t *testing.T) {
 	program := parseProgram(t, "for value in 42:\n    value\n")
 
-	_, err := Evaluate(program, nil)
+	_, err := EvaluateProgram(program, nil)
 	if err == nil {
-		t.Fatal("Evaluate() returned nil error")
+		t.Fatal("EvaluateProgram() returned nil error")
 	}
 
 	evaluationError, ok := err.(Error)
@@ -377,7 +377,7 @@ func TestEvaluatePrintAndRange(t *testing.T) {
 	var output bytes.Buffer
 	builtin.Register(environment, &output)
 
-	result, err := Evaluate(program, environment)
+	result, err := EvaluateProgram(program, environment)
 	if err != nil {
 		t.Fatal(err)
 	}

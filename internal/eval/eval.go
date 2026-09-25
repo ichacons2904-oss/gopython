@@ -7,89 +7,71 @@ import (
 	"gopython/internal/object"
 )
 
-func Evaluate(node ast.Node, environment *object.Environment) (object.Value, error) {
+func EvaluateProgram(program *ast.Program, environment *object.Environment) (object.Value, error) {
 	if environment == nil {
 		environment = object.NewEnvironment(nil)
 	}
 
-	result, err := evaluate(node, environment)
+	outcome, err := evaluateStatements(program.Statements, environment)
 	if err != nil {
 		return nil, err
 	}
-	if result.Flow != NoFlow {
+	if outcome.kind != normalCompletion {
 		return nil, Error{
 			Kind:    RuntimeError,
-			Message: fmt.Sprintf("unexpected %s outside its valid context", result.Flow),
+			Message: fmt.Sprintf("unexpected %s outside its valid context", outcome.kind),
 		}
 	}
-	return result.Value, nil
+	return outcome.value, nil
 }
 
-func evaluate(node ast.Node, environment *object.Environment) (Result, error) {
-	switch node := node.(type) {
-	case ast.Program:
-		return evaluateProgram(node, environment)
-	case *ast.Program:
-		return evaluateProgram(*node, environment)
-	case ast.ExpressionStatement:
-		value, err := evaluateExpression(node.Expression, environment)
-		return Result{Value: value}, err
-	case ast.Assignment:
-		return evaluateAssignment(node, environment)
-	case ast.IfStatement:
-		return evaluateIfStatement(node, environment)
+func evaluateStatement(statement ast.Statement, environment *object.Environment) (completion, error) {
+	switch statement := statement.(type) {
+	case *ast.ExpressionStatement:
+		value, err := evaluateExpression(statement.Expression, environment)
+		return completion{value: value}, err
+	case *ast.Assignment:
+		return evaluateAssignment(statement, environment)
 	case *ast.IfStatement:
-		return evaluateIfStatement(*node, environment)
-	case ast.WhileStatement:
-		return evaluateWhileStatement(node, environment)
+		return evaluateIfStatement(statement, environment)
 	case *ast.WhileStatement:
-		return evaluateWhileStatement(*node, environment)
-	case ast.ForStatement:
-		return evaluateForStatement(node, environment)
+		return evaluateWhileStatement(statement, environment)
 	case *ast.ForStatement:
-		return evaluateForStatement(*node, environment)
-	case ast.BreakStatement:
-		return Result{Flow: BreakFlow}, nil
+		return evaluateForStatement(statement, environment)
 	case *ast.BreakStatement:
-		return Result{Flow: BreakFlow}, nil
-	case ast.ContinueStatement:
-		return Result{Flow: ContinueFlow}, nil
+		return completion{kind: breakCompletion}, nil
 	case *ast.ContinueStatement:
-		return Result{Flow: ContinueFlow}, nil
+		return completion{kind: continueCompletion}, nil
 	default:
-		return Result{}, Error{
+		return completion{}, Error{
 			Kind:     RuntimeError,
-			Message:  fmt.Sprintf("unsupported statement %T", node),
-			Position: node.Position(),
+			Message:  fmt.Sprintf("unsupported statement %T", statement),
+			Position: statement.Position(),
 		}
 	}
 }
 
-func evaluateProgram(program ast.Program, environment *object.Environment) (Result, error) {
-	return evaluateStatements(program.Statements, environment)
-}
-
-func evaluateStatements(statements []ast.Statement, environment *object.Environment) (Result, error) {
-	result := Result{Value: object.None{}}
+func evaluateStatements(statements []ast.Statement, environment *object.Environment) (completion, error) {
+	outcome := completion{value: object.None{}}
 	for _, statement := range statements {
-		value, err := evaluate(statement, environment)
+		value, err := evaluateStatement(statement, environment)
 		if err != nil {
-			return Result{}, err
+			return completion{}, err
 		}
-		result = value
-		if result.Flow != NoFlow {
-			return result, nil
+		outcome = value
+		if outcome.kind != normalCompletion {
+			return outcome, nil
 		}
 	}
-	return result, nil
+	return outcome, nil
 }
 
-func evaluateAssignment(statement ast.Assignment, environment *object.Environment) (Result, error) {
+func evaluateAssignment(statement *ast.Assignment, environment *object.Environment) (completion, error) {
 	value, err := evaluateExpression(statement.Value, environment)
 	if err != nil {
-		return Result{}, err
+		return completion{}, err
 	}
 
 	environment.Set(statement.Name.Name, value)
-	return Result{Value: object.None{}}, nil
+	return completion{value: object.None{}}, nil
 }

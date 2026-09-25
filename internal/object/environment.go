@@ -13,13 +13,10 @@ func NewEnvironment(parent *Environment) *Environment {
 }
 
 func (environment *Environment) Get(name string) (Value, bool) {
-	value, ok := environment.values[name]
-	if ok {
-		return value, true
-	}
-
-	if environment.parent != nil {
-		return environment.parent.Get(name)
+	for current := environment; current != nil; current = current.parent {
+		if value, ok := current.values[name]; ok {
+			return value, true
+		}
 	}
 
 	return nil, false

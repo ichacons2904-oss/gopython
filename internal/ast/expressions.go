@@ -14,7 +14,7 @@ func (node IntegerLiteral) Position() source.Position {
 	return node.Pos
 }
 
-func (IntegerLiteral) expressionNode() {}
+func (*IntegerLiteral) expressionNode() {}
 
 type StringLiteral struct {
 	Pos   source.Position
@@ -25,7 +25,7 @@ func (node StringLiteral) Position() source.Position {
 	return node.Pos
 }
 
-func (StringLiteral) expressionNode() {}
+func (*StringLiteral) expressionNode() {}
 
 type BooleanLiteral struct {
 	Pos   source.Position
@@ -36,7 +36,7 @@ func (node BooleanLiteral) Position() source.Position {
 	return node.Pos
 }
 
-func (BooleanLiteral) expressionNode() {}
+func (*BooleanLiteral) expressionNode() {}
 
 type NoneLiteral struct {
 	Pos source.Position
@@ -46,7 +46,7 @@ func (node NoneLiteral) Position() source.Position {
 	return node.Pos
 }
 
-func (NoneLiteral) expressionNode() {}
+func (*NoneLiteral) expressionNode() {}
 
 type Identifier struct {
 	Pos  source.Position
@@ -57,7 +57,7 @@ func (node Identifier) Position() source.Position {
 	return node.Pos
 }
 
-func (Identifier) expressionNode() {}
+func (*Identifier) expressionNode() {}
 
 type UnaryExpression struct {
 	Pos      source.Position
@@ -69,7 +69,7 @@ func (node UnaryExpression) Position() source.Position {
 	return node.Pos
 }
 
-func (UnaryExpression) expressionNode() {}
+func (*UnaryExpression) expressionNode() {}
 
 type BinaryExpression struct {
 	Pos      source.Position
@@ -82,7 +82,7 @@ func (node BinaryExpression) Position() source.Position {
 	return node.Pos
 }
 
-func (BinaryExpression) expressionNode() {}
+func (*BinaryExpression) expressionNode() {}
 
 type ComparisonExpression struct {
 	Pos         source.Position
@@ -100,7 +100,7 @@ func (node ComparisonExpression) Position() source.Position {
 	return node.Pos
 }
 
-func (ComparisonExpression) expressionNode() {}
+func (*ComparisonExpression) expressionNode() {}
 
 type CallExpression struct {
 	Pos       source.Position
@@ -112,4 +112,4 @@ func (node CallExpression) Position() source.Position {
 	return node.Pos
 }
 
-func (CallExpression) expressionNode() {}
+func (*CallExpression) expressionNode() {}

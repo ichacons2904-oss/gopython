@@ -5,10 +5,10 @@ import (
 	"gopython/internal/object"
 )
 
-func evaluateIfStatement(statement ast.IfStatement, environment *object.Environment) (Result, error) {
+func evaluateIfStatement(statement *ast.IfStatement, environment *object.Environment) (completion, error) {
 	condition, err := evaluateExpression(statement.Condition, environment)
 	if err != nil {
-		return Result{}, err
+		return completion{}, err
 	}
 	if isTruthy(condition) {
 		return evaluateStatements(statement.Body, environment)
@@ -17,7 +17,7 @@ func evaluateIfStatement(statement ast.IfStatement, environment *object.Environm
 	for _, branch := range statement.ElifBranches {
 		condition, err := evaluateExpression(branch.Condition, environment)
 		if err != nil {
-			return Result{}, err
+			return completion{}, err
 		}
 		if isTruthy(condition) {
 			return evaluateStatements(branch.Body, environment)
@@ -28,5 +28,5 @@ func evaluateIfStatement(statement ast.IfStatement, environment *object.Environm
 		return evaluateStatements(statement.ElseBody, environment)
 	}
 
-	return Result{Value: object.None{}}, nil
+	return completion{value: object.None{}}, nil
 }

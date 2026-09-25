@@ -22,7 +22,7 @@ func TestParseWhileAndFor(t *testing.T) {
 		t.Fatalf("statement count = %d, want 2", len(program.Statements))
 	}
 
-	whileStatement, ok := program.Statements[0].(ast.WhileStatement)
+	whileStatement, ok := program.Statements[0].(*ast.WhileStatement)
 	if !ok {
 		t.Fatalf("first statement = %T, want ast.WhileStatement", program.Statements[0])
 	}
@@ -30,23 +30,23 @@ func TestParseWhileAndFor(t *testing.T) {
 		t.Fatalf("while body length = %d, want 3", len(whileStatement.Body))
 	}
 
-	firstIf, ok := whileStatement.Body[0].(ast.IfStatement)
+	firstIf, ok := whileStatement.Body[0].(*ast.IfStatement)
 	if !ok {
 		t.Fatalf("first while statement = %T, want ast.IfStatement", whileStatement.Body[0])
 	}
-	if _, ok := firstIf.Body[0].(ast.ContinueStatement); !ok {
+	if _, ok := firstIf.Body[0].(*ast.ContinueStatement); !ok {
 		t.Fatalf("nested statement = %T, want ast.ContinueStatement", firstIf.Body[0])
 	}
 
-	secondIf, ok := whileStatement.Body[2].(ast.IfStatement)
+	secondIf, ok := whileStatement.Body[2].(*ast.IfStatement)
 	if !ok {
 		t.Fatalf("third while statement = %T, want ast.IfStatement", whileStatement.Body[2])
 	}
-	if _, ok := secondIf.Body[0].(ast.BreakStatement); !ok {
+	if _, ok := secondIf.Body[0].(*ast.BreakStatement); !ok {
 		t.Fatalf("nested statement = %T, want ast.BreakStatement", secondIf.Body[0])
 	}
 
-	forStatement, ok := program.Statements[1].(ast.ForStatement)
+	forStatement, ok := program.Statements[1].(*ast.ForStatement)
 	if !ok {
 		t.Fatalf("second statement = %T, want ast.ForStatement", program.Statements[1])
 	}

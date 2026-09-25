@@ -14,7 +14,7 @@ func (node IfStatement) Position() source.Position {
 	return node.Pos
 }
 
-func (IfStatement) statementNode() {}
+func (*IfStatement) statementNode() {}
 
 type ElifBranch struct {
 	Pos       source.Position
@@ -36,7 +36,7 @@ func (node WhileStatement) Position() source.Position {
 	return node.Pos
 }
 
-func (WhileStatement) statementNode() {}
+func (*WhileStatement) statementNode() {}
 
 type ForStatement struct {
 	Pos      source.Position
@@ -49,7 +49,7 @@ func (node ForStatement) Position() source.Position {
 	return node.Pos
 }
 
-func (ForStatement) statementNode() {}
+func (*ForStatement) statementNode() {}
 
 type ReturnStatement struct {
 	Pos   source.Position
@@ -60,7 +60,7 @@ func (node ReturnStatement) Position() source.Position {
 	return node.Pos
 }
 
-func (ReturnStatement) statementNode() {}
+func (*ReturnStatement) statementNode() {}
 
 type BreakStatement struct {
 	Pos source.Position
@@ -70,7 +70,7 @@ func (node BreakStatement) Position() source.Position {
 	return node.Pos
 }
 
-func (BreakStatement) statementNode() {}
+func (*BreakStatement) statementNode() {}
 
 type ContinueStatement struct {
 	Pos source.Position
@@ -80,4 +80,4 @@ func (node ContinueStatement) Position() source.Position {
 	return node.Pos
 }
 
-func (ContinueStatement) statementNode() {}
+func (*ContinueStatement) statementNode() {}

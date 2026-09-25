@@ -65,7 +65,7 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 		return nil, err
 	}
 
-	return ast.ExpressionStatement{Expression: expression}, nil
+	return &ast.ExpressionStatement{Expression: expression}, nil
 }
 
 func (parser *Parser) parseAssignment() (ast.Statement, error) {
@@ -88,7 +88,7 @@ func (parser *Parser) parseAssignment() (ast.Statement, error) {
 		return nil, err
 	}
 
-	return ast.Assignment{
+	return &ast.Assignment{
 		Pos:   positionOf(assignmentToken),
 		Name:  name,
 		Value: value,
@@ -110,7 +110,7 @@ func (parser *Parser) parseReturnStatement() (ast.Statement, error) {
 		return nil, err
 	}
 
-	return ast.ReturnStatement{Pos: positionOf(returnToken), Value: value}, nil
+	return &ast.ReturnStatement{Pos: positionOf(returnToken), Value: value}, nil
 }
 
 func (parser *Parser) parseBreakStatement() (ast.Statement, error) {
@@ -118,7 +118,7 @@ func (parser *Parser) parseBreakStatement() (ast.Statement, error) {
 	if _, err := parser.expect(lexer.Newline); err != nil {
 		return nil, err
 	}
-	return ast.BreakStatement{Pos: positionOf(breakToken)}, nil
+	return &ast.BreakStatement{Pos: positionOf(breakToken)}, nil
 }
 
 func (parser *Parser) parseContinueStatement() (ast.Statement, error) {
@@ -126,5 +126,5 @@ func (parser *Parser) parseContinueStatement() (ast.Statement, error) {
 	if _, err := parser.expect(lexer.Newline); err != nil {
 		return nil, err
 	}
-	return ast.ContinueStatement{Pos: positionOf(continueToken)}, nil
+	return &ast.ContinueStatement{Pos: positionOf(continueToken)}, nil
 }

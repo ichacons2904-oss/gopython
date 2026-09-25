@@ -51,7 +51,7 @@ func (parser *Parser) parseIfStatement() (ast.Statement, error) {
 		}
 	}
 
-	return ast.IfStatement{
+	return &ast.IfStatement{
 		Pos:          positionOf(ifToken),
 		Condition:    condition,
 		Body:         body,
@@ -74,7 +74,7 @@ func (parser *Parser) parseWhileStatement() (ast.Statement, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ast.WhileStatement{
+	return &ast.WhileStatement{
 		Pos:       positionOf(whileToken),
 		Condition: condition,
 		Body:      body,
@@ -103,7 +103,7 @@ func (parser *Parser) parseForStatement() (ast.Statement, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ast.ForStatement{
+	return &ast.ForStatement{
 		Pos:      positionOf(forToken),
 		Target:   ast.Identifier{Pos: positionOf(targetToken), Name: targetToken.Lexeme},
 		Iterable: iterable,

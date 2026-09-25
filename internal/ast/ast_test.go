@@ -7,25 +7,25 @@ import (
 )
 
 var (
-	_ Node       = Program{}
-	_ Expression = IntegerLiteral{}
-	_ Expression = StringLiteral{}
-	_ Expression = BooleanLiteral{}
-	_ Expression = NoneLiteral{}
-	_ Expression = Identifier{}
-	_ Expression = UnaryExpression{}
-	_ Expression = BinaryExpression{}
-	_ Expression = ComparisonExpression{}
-	_ Expression = CallExpression{}
-	_ Statement  = Assignment{}
-	_ Statement  = ExpressionStatement{}
-	_ Statement  = IfStatement{}
-	_ Statement  = WhileStatement{}
-	_ Statement  = ForStatement{}
-	_ Statement  = ReturnStatement{}
-	_ Statement  = BreakStatement{}
-	_ Statement  = ContinueStatement{}
-	_ Statement  = FunctionDefinition{}
+	_ Node       = (*Program)(nil)
+	_ Expression = (*IntegerLiteral)(nil)
+	_ Expression = (*StringLiteral)(nil)
+	_ Expression = (*BooleanLiteral)(nil)
+	_ Expression = (*NoneLiteral)(nil)
+	_ Expression = (*Identifier)(nil)
+	_ Expression = (*UnaryExpression)(nil)
+	_ Expression = (*BinaryExpression)(nil)
+	_ Expression = (*ComparisonExpression)(nil)
+	_ Expression = (*CallExpression)(nil)
+	_ Statement  = (*Assignment)(nil)
+	_ Statement  = (*ExpressionStatement)(nil)
+	_ Statement  = (*IfStatement)(nil)
+	_ Statement  = (*WhileStatement)(nil)
+	_ Statement  = (*ForStatement)(nil)
+	_ Statement  = (*ReturnStatement)(nil)
+	_ Statement  = (*BreakStatement)(nil)
+	_ Statement  = (*ContinueStatement)(nil)
+	_ Statement  = (*FunctionDefinition)(nil)
 )
 
 func TestASTNodesPreserveSourcePosition(t *testing.T) {
@@ -40,7 +40,7 @@ func TestASTNodesPreserveSourcePosition(t *testing.T) {
 func TestExpressionStatementUsesExpressionPosition(t *testing.T) {
 	position := source.Position{Line: 2, Column: 1}
 	statement := ExpressionStatement{
-		Expression: Identifier{Pos: position, Name: "print"},
+		Expression: &Identifier{Pos: position, Name: "print"},
 	}
 
 	if got := statement.Position(); got != position {

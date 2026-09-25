@@ -5,22 +5,18 @@ import "strconv"
 type Type string
 
 const (
-	IntegerType Type = "INTEGER"
-	StringType  Type = "STRING"
-	BooleanType Type = "BOOLEAN"
-	NoneType    Type = "NONE"
-	BuiltinType Type = "BUILTIN"
-	RangeType   Type = "RANGE"
+	IntegerType  Type = "INTEGER"
+	StringType   Type = "STRING"
+	BooleanType  Type = "BOOLEAN"
+	NoneType     Type = "NONE"
+	BuiltinType  Type = "BUILTIN"
+	FunctionType Type = "FUNCTION"
+	RangeType    Type = "RANGE"
 )
 
 type Value interface {
 	Type() Type
-	Inspect() string
-}
-
-type Callable interface {
-	Value
-	Call(args []Value) (Value, error)
+	Display() string
 }
 
 type Integer struct {
@@ -31,7 +27,7 @@ func (Integer) Type() Type {
 	return IntegerType
 }
 
-func (value Integer) Inspect() string {
+func (value Integer) Display() string {
 	return strconv.FormatInt(value.Value, 10)
 }
 
@@ -43,7 +39,7 @@ func (String) Type() Type {
 	return StringType
 }
 
-func (value String) Inspect() string {
+func (value String) Display() string {
 	return value.Value
 }
 
@@ -55,7 +51,7 @@ func (Boolean) Type() Type {
 	return BooleanType
 }
 
-func (value Boolean) Inspect() string {
+func (value Boolean) Display() string {
 	if value.Value {
 		return "True"
 	}
@@ -68,7 +64,7 @@ func (None) Type() Type {
 	return NoneType
 }
 
-func (None) Inspect() string {
+func (None) Display() string {
 	return "None"
 }
 
@@ -83,10 +79,6 @@ func (Builtin) Type() Type {
 	return BuiltinType
 }
 
-func (value Builtin) Inspect() string {
+func (value Builtin) Display() string {
 	return "<built-in function " + value.Name + ">"
-}
-
-func (value Builtin) Call(args []Value) (Value, error) {
-	return value.Function(args)
 }

@@ -2,27 +2,27 @@ package eval
 
 import "gopython/internal/object"
 
-type Flow int
+type completionKind uint8
 
 const (
-	NoFlow Flow = iota
-	BreakFlow
-	ContinueFlow
-	ReturnFlow
+	normalCompletion completionKind = iota
+	breakCompletion
+	continueCompletion
+	returnCompletion
 )
 
-type Result struct {
-	Value object.Value
-	Flow  Flow
+type completion struct {
+	value object.Value
+	kind  completionKind
 }
 
-func (flow Flow) String() string {
-	switch flow {
-	case BreakFlow:
+func (kind completionKind) String() string {
+	switch kind {
+	case breakCompletion:
 		return "break"
-	case ContinueFlow:
+	case continueCompletion:
 		return "continue"
-	case ReturnFlow:
+	case returnCompletion:
 		return "return"
 	default:
 		return "normal execution"

@@ -19,7 +19,7 @@ func (Range) Type() Type {
 	return RangeType
 }
 
-func (value Range) Inspect() string {
+func (value Range) Display() string {
 	return fmt.Sprintf("range(%d, %d, %d)", value.Start, value.Stop, value.Step)
 }
 

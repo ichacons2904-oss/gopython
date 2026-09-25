@@ -22,7 +22,7 @@ func TestParseFunctionDefinition(t *testing.T) {
 		t.Fatalf("statement count = %d, want 2", len(program.Statements))
 	}
 
-	function, ok := program.Statements[0].(ast.FunctionDefinition)
+	function, ok := program.Statements[0].(*ast.FunctionDefinition)
 	if !ok {
 		t.Fatalf("first statement = %T, want ast.FunctionDefinition", program.Statements[0])
 	}
@@ -35,7 +35,7 @@ func TestParseFunctionDefinition(t *testing.T) {
 	if len(function.Body) != 1 {
 		t.Fatalf("function body length = %d, want 1", len(function.Body))
 	}
-	returnStatement, ok := function.Body[0].(ast.ReturnStatement)
+	returnStatement, ok := function.Body[0].(*ast.ReturnStatement)
 	if !ok || returnStatement.Value == nil {
 		t.Fatalf("function body statement = %#v, want return with value", function.Body[0])
 	}

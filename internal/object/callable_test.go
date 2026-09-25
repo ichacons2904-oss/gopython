@@ -13,11 +13,11 @@ func TestBuiltinValue(t *testing.T) {
 	if builtin.Type() != BuiltinType {
 		t.Fatalf("Type() = %q, want %q", builtin.Type(), BuiltinType)
 	}
-	if got := builtin.Inspect(); got != "<built-in function answer>" {
-		t.Fatalf("Inspect() = %q, want built-in description", got)
+	if got := builtin.Display(); got != "<built-in function answer>" {
+		t.Fatalf("Display() = %q, want built-in description", got)
 	}
 
-	value, err := builtin.Call(nil)
+	value, err := builtin.Function(nil)
 	if err != nil {
 		t.Fatal(err)
 	}

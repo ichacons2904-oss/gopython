@@ -21,7 +21,7 @@ func TestPrintBuiltin(t *testing.T) {
 	if !ok {
 		t.Fatalf("print = %T, want object.Builtin", value)
 	}
-	if _, err := print.Call([]object.Value{
+	if _, err := print.Function([]object.Value{
 		object.String{Value: "answer"},
 		object.Integer{Value: 42},
 	}); err != nil {
@@ -46,7 +46,7 @@ func TestRangeBuiltin(t *testing.T) {
 		t.Fatalf("range = %T, want object.Builtin", value)
 	}
 
-	value, err := rangeBuiltin.Call([]object.Value{object.Integer{Value: 3}})
+	value, err := rangeBuiltin.Function([]object.Value{object.Integer{Value: 3}})
 	if err != nil {
 		t.Fatal(err)
 	}

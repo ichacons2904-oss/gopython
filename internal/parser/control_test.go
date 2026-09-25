@@ -22,7 +22,7 @@ func TestParseIfElifElse(t *testing.T) {
 		t.Fatalf("statement count = %d, want 1", len(program.Statements))
 	}
 
-	statement, ok := program.Statements[0].(ast.IfStatement)
+	statement, ok := program.Statements[0].(*ast.IfStatement)
 	if !ok {
 		t.Fatalf("statement = %T, want ast.IfStatement", program.Statements[0])
 	}
@@ -52,8 +52,8 @@ func TestParseNestedIfBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	outer := program.Statements[0].(ast.IfStatement)
-	inner, ok := outer.Body[0].(ast.IfStatement)
+	outer := program.Statements[0].(*ast.IfStatement)
+	inner, ok := outer.Body[0].(*ast.IfStatement)
 	if !ok {
 		t.Fatalf("nested statement = %T, want ast.IfStatement", outer.Body[0])
 	}

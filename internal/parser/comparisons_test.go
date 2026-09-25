@@ -17,8 +17,8 @@ func TestParseComparisonChain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expressionStatement := program.Statements[0].(ast.ExpressionStatement)
-	comparison, ok := expressionStatement.Expression.(ast.ComparisonExpression)
+	expressionStatement := program.Statements[0].(*ast.ExpressionStatement)
+	comparison, ok := expressionStatement.Expression.(*ast.ComparisonExpression)
 	if !ok {
 		t.Fatalf("expression = %T, want ast.ComparisonExpression", expressionStatement.Expression)
 	}
@@ -28,10 +28,10 @@ func TestParseComparisonChain(t *testing.T) {
 	if comparison.Comparisons[0].Operator != lexer.LessThan || comparison.Comparisons[1].Operator != lexer.LessThan {
 		t.Fatalf("comparison operators = %#v, want two < operators", comparison.Comparisons)
 	}
-	if comparison.Comparisons[0].Right.(ast.Identifier).Name != "b" {
+	if comparison.Comparisons[0].Right.(*ast.Identifier).Name != "b" {
 		t.Fatalf("first comparison right side = %#v, want b", comparison.Comparisons[0].Right)
 	}
-	if comparison.Comparisons[1].Right.(ast.Identifier).Name != "c" {
+	if comparison.Comparisons[1].Right.(*ast.Identifier).Name != "c" {
 		t.Fatalf("second comparison right side = %#v, want c", comparison.Comparisons[1].Right)
 	}
 }
@@ -46,15 +46,15 @@ func TestNotBindsLooserThanComparison(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expressionStatement := program.Statements[0].(ast.ExpressionStatement)
-	notExpression, ok := expressionStatement.Expression.(ast.UnaryExpression)
+	expressionStatement := program.Statements[0].(*ast.ExpressionStatement)
+	notExpression, ok := expressionStatement.Expression.(*ast.UnaryExpression)
 	if !ok {
 		t.Fatalf("expression = %T, want ast.UnaryExpression", expressionStatement.Expression)
 	}
 	if notExpression.Operator != lexer.Not {
 		t.Fatalf("unary operator = %s, want %s", notExpression.Operator, lexer.Not)
 	}
-	if _, ok := notExpression.Operand.(ast.ComparisonExpression); !ok {
+	if _, ok := notExpression.Operand.(*ast.ComparisonExpression); !ok {
 		t.Fatalf("not operand = %T, want ast.ComparisonExpression", notExpression.Operand)
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"gopython/internal/source"
 )
 
-func evaluateComparison(expression ast.ComparisonExpression, environment *object.Environment) (object.Value, error) {
+func evaluateComparison(expression *ast.ComparisonExpression, environment *object.Environment) (object.Value, error) {
 	if len(expression.Comparisons) == 0 {
 		return nil, Error{
 			Kind:     RuntimeError,

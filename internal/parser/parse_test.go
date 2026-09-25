@@ -21,7 +21,7 @@ func TestParseSimpleProgram(t *testing.T) {
 		t.Fatalf("statement count = %d, want 2", len(program.Statements))
 	}
 
-	assignment, ok := program.Statements[0].(ast.Assignment)
+	assignment, ok := program.Statements[0].(*ast.Assignment)
 	if !ok {
 		t.Fatalf("first statement = %T, want ast.Assignment", program.Statements[0])
 	}
@@ -29,7 +29,7 @@ func TestParseSimpleProgram(t *testing.T) {
 		t.Fatalf("assignment name = %q, want %q", assignment.Name.Name, "x")
 	}
 
-	addition, ok := assignment.Value.(ast.BinaryExpression)
+	addition, ok := assignment.Value.(*ast.BinaryExpression)
 	if !ok {
 		t.Fatalf("assignment value = %T, want ast.BinaryExpression", assignment.Value)
 	}
@@ -37,7 +37,7 @@ func TestParseSimpleProgram(t *testing.T) {
 		t.Fatalf("outer operator = %s, want %s", addition.Operator, lexer.Plus)
 	}
 
-	multiplication, ok := addition.Right.(ast.BinaryExpression)
+	multiplication, ok := addition.Right.(*ast.BinaryExpression)
 	if !ok {
 		t.Fatalf("right expression = %T, want ast.BinaryExpression", addition.Right)
 	}
@@ -45,11 +45,11 @@ func TestParseSimpleProgram(t *testing.T) {
 		t.Fatalf("inner operator = %s, want %s", multiplication.Operator, lexer.Asterisk)
 	}
 
-	expressionStatement, ok := program.Statements[1].(ast.ExpressionStatement)
+	expressionStatement, ok := program.Statements[1].(*ast.ExpressionStatement)
 	if !ok {
 		t.Fatalf("second statement = %T, want ast.ExpressionStatement", program.Statements[1])
 	}
-	call, ok := expressionStatement.Expression.(ast.CallExpression)
+	call, ok := expressionStatement.Expression.(*ast.CallExpression)
 	if !ok {
 		t.Fatalf("expression = %T, want ast.CallExpression", expressionStatement.Expression)
 	}
@@ -72,8 +72,8 @@ func TestParseSimpleStatements(t *testing.T) {
 		t.Fatalf("statement count = %d, want 1", len(program.Statements))
 	}
 
-	function := program.Statements[0].(ast.FunctionDefinition)
-	returnWithoutValue := function.Body[0].(ast.ReturnStatement)
+	function := program.Statements[0].(*ast.FunctionDefinition)
+	returnWithoutValue := function.Body[0].(*ast.ReturnStatement)
 	if returnWithoutValue.Value != nil {
 		t.Fatal("return without expression has a value")
 	}

@@ -12,7 +12,7 @@ func printFunction(output io.Writer) object.BuiltinFunction {
 	return func(arguments []object.Value) (object.Value, error) {
 		values := make([]string, len(arguments))
 		for index, argument := range arguments {
-			values[index] = argument.Inspect()
+			values[index] = argument.Display()
 		}
 
 		if _, err := fmt.Fprintln(output, strings.Join(values, " ")); err != nil {

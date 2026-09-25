@@ -12,7 +12,7 @@ func (node Assignment) Position() source.Position {
 	return node.Pos
 }
 
-func (Assignment) statementNode() {}
+func (*Assignment) statementNode() {}
 
 type ExpressionStatement struct {
 	Expression Expression
@@ -22,7 +22,7 @@ func (node ExpressionStatement) Position() source.Position {
 	return node.Expression.Position()
 }
 
-func (ExpressionStatement) statementNode() {}
+func (*ExpressionStatement) statementNode() {}
 
 type FunctionDefinition struct {
 	Pos        source.Position
@@ -35,4 +35,4 @@ func (node FunctionDefinition) Position() source.Position {
 	return node.Pos
 }
 
-func (FunctionDefinition) statementNode() {}
+func (*FunctionDefinition) statementNode() {}

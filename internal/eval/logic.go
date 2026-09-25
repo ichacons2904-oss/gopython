@@ -21,7 +21,7 @@ func isTruthy(value object.Value) bool {
 	}
 }
 
-func evaluateLogical(expression ast.BinaryExpression, environment *object.Environment) (object.Value, error) {
+func evaluateLogical(expression *ast.BinaryExpression, environment *object.Environment) (object.Value, error) {
 	left, err := evaluateExpression(expression.Left, environment)
 	if err != nil {
 		return nil, err

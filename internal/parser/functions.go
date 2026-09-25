@@ -43,7 +43,7 @@ func (parser *Parser) parseFunctionDefinition() (ast.Statement, error) {
 		return nil, bodyErr
 	}
 
-	return ast.FunctionDefinition{
+	return &ast.FunctionDefinition{
 		Pos: positionOf(defToken),
 		Name: ast.Identifier{
 			Pos:  positionOf(nameToken),
