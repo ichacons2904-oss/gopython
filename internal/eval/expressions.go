@@ -24,6 +24,8 @@ func evaluateExpression(expression ast.Expression, environment *object.Environme
 		return evaluateUnary(expression, environment)
 	case ast.BinaryExpression:
 		return evaluateBinary(expression, environment)
+	case ast.ComparisonExpression:
+		return evaluateComparison(expression, environment)
 	default:
 		return nil, Error{
 			Kind:     RuntimeError,
@@ -51,6 +53,10 @@ func evaluateUnary(expression ast.UnaryExpression, environment *object.Environme
 		return nil, err
 	}
 
+	if expression.Operator == lexer.Not {
+		return object.Boolean{Value: !isTruthy(operand)}, nil
+	}
+
 	integer, ok := operand.(object.Integer)
 	if !ok {
 		return nil, Error{
@@ -75,6 +81,10 @@ func evaluateUnary(expression ast.UnaryExpression, environment *object.Environme
 }
 
 func evaluateBinary(expression ast.BinaryExpression, environment *object.Environment) (object.Value, error) {
+	if expression.Operator == lexer.And || expression.Operator == lexer.Or {
+		return evaluateLogical(expression, environment)
+	}
+
 	left, err := evaluateExpression(expression.Left, environment)
 	if err != nil {
 		return nil, err
