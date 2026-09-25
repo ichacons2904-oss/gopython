@@ -6,14 +6,13 @@ GoPython es un intérprete minimal de Python escrito en Go
 
 ```text
 cmd/gopython/      command-line entry point
-internal/lexer/   tokens and significant indentation
-internal/ast/     AST node definitions
-internal/parser/  parser and AST construction
+internal/lexer/   tokens and significant indentation ✅
+internal/ast/     AST node definitions ✅
+internal/parser/  parser and AST construction ✅
 internal/object/  runtime values and environments
 internal/eval/    evaluator
 internal/repl/    optional interactive loop
 examples/         readable example programs
-testdata/         programs and expected behavior for comparisons
 ```
 
 Pipeline
