@@ -322,6 +322,55 @@ func TestEvaluateContinueStartsNextIteration(t *testing.T) {
 	}
 }
 
+func TestEvaluateForOverRange(t *testing.T) {
+	program := parseProgram(t, "total = 0\nfor value in range(1, 5):\n    total = total + value\ntotal\n")
+	environment := object.NewEnvironment(nil)
+	builtin.Register(environment, nil)
+
+	result, err := Evaluate(program, environment)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.Integer{Value: 10}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
+func TestEvaluateForBreakAndContinue(t *testing.T) {
+	program := parseProgram(t, "total = 0\nfor value in range(5):\n    if value == 2:\n        continue\n    if value == 4:\n        break\n    total = total + value\ntotal\n")
+	environment := object.NewEnvironment(nil)
+	builtin.Register(environment, nil)
+
+	result, err := Evaluate(program, environment)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.Integer{Value: 4}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
+func TestEvaluateForRejectsNonIterable(t *testing.T) {
+	program := parseProgram(t, "for value in 42:\n    value\n")
+
+	_, err := Evaluate(program, nil)
+	if err == nil {
+		t.Fatal("Evaluate() returned nil error")
+	}
+
+	evaluationError, ok := err.(Error)
+	if !ok {
+		t.Fatalf("error type = %T, want eval.Error", err)
+	}
+	if evaluationError.Kind != TypeError {
+		t.Fatalf("error kind = %s, want %s", evaluationError.Kind, TypeError)
+	}
+}
+
 func TestEvaluatePrintAndRange(t *testing.T) {
 	program := parseProgram(t, "print(\"answer\", 42)\nrange(1, 5, 2)\n")
 	environment := object.NewEnvironment(nil)

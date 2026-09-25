@@ -44,6 +44,10 @@ func evaluate(node ast.Node, environment *object.Environment) (Result, error) {
 		return evaluateWhileStatement(node, environment)
 	case *ast.WhileStatement:
 		return evaluateWhileStatement(*node, environment)
+	case ast.ForStatement:
+		return evaluateForStatement(node, environment)
+	case *ast.ForStatement:
+		return evaluateForStatement(*node, environment)
 	case ast.BreakStatement:
 		return Result{Flow: BreakFlow}, nil
 	case *ast.BreakStatement:
