@@ -2,15 +2,6 @@ package object
 
 import "fmt"
 
-type Iterable interface {
-	Value
-	Iterator() Iterator
-}
-
-type Iterator interface {
-	Next() (Value, bool)
-}
-
 type Range struct {
 	Start int64
 	Stop  int64
