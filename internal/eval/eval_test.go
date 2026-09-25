@@ -1,9 +1,11 @@
 package eval
 
 import (
+	"bytes"
 	"testing"
 
 	"gopython/internal/ast"
+	"gopython/internal/builtin"
 	"gopython/internal/lexer"
 	"gopython/internal/object"
 	"gopython/internal/parser"
@@ -317,6 +319,26 @@ func TestEvaluateContinueStartsNextIteration(t *testing.T) {
 	want := object.Integer{Value: 12}
 	if result != want {
 		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
+func TestEvaluatePrintAndRange(t *testing.T) {
+	program := parseProgram(t, "print(\"answer\", 42)\nrange(1, 5, 2)\n")
+	environment := object.NewEnvironment(nil)
+	var output bytes.Buffer
+	builtin.Register(environment, &output)
+
+	result, err := Evaluate(program, environment)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantRange := object.Range{Start: 1, Stop: 5, Step: 2}
+	if result != wantRange {
+		t.Fatalf("result = %#v, want %#v", result, wantRange)
+	}
+	if output.String() != "answer 42\n" {
+		t.Fatalf("output = %q, want %q", output.String(), "answer 42\\n")
 	}
 }
 

@@ -26,6 +26,8 @@ func evaluateExpression(expression ast.Expression, environment *object.Environme
 		return evaluateBinary(expression, environment)
 	case ast.ComparisonExpression:
 		return evaluateComparison(expression, environment)
+	case ast.CallExpression:
+		return evaluateCall(expression, environment)
 	default:
 		return nil, Error{
 			Kind:     RuntimeError,

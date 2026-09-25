@@ -9,11 +9,18 @@ const (
 	StringType  Type = "STRING"
 	BooleanType Type = "BOOLEAN"
 	NoneType    Type = "NONE"
+	BuiltinType Type = "BUILTIN"
+	RangeType   Type = "RANGE"
 )
 
 type Value interface {
 	Type() Type
 	Inspect() string
+}
+
+type Callable interface {
+	Value
+	Call(args []Value) (Value, error)
 }
 
 type Integer struct {
@@ -63,4 +70,23 @@ func (None) Type() Type {
 
 func (None) Inspect() string {
 	return "None"
+}
+
+type BuiltinFunction func(args []Value) (Value, error)
+
+type Builtin struct {
+	Name     string
+	Function BuiltinFunction
+}
+
+func (Builtin) Type() Type {
+	return BuiltinType
+}
+
+func (value Builtin) Inspect() string {
+	return "<built-in function " + value.Name + ">"
+}
+
+func (value Builtin) Call(args []Value) (Value, error) {
+	return value.Function(args)
 }
