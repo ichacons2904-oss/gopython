@@ -32,6 +32,8 @@ func evaluateStatement(statement ast.Statement, environment *object.Environment)
 		return completion{value: value}, err
 	case *ast.Assignment:
 		return evaluateAssignment(statement, environment)
+	case *ast.FunctionDefinition:
+		return evaluateFunctionDefinition(statement, environment)
 	case *ast.IfStatement:
 		return evaluateIfStatement(statement, environment)
 	case *ast.WhileStatement:
@@ -42,6 +44,8 @@ func evaluateStatement(statement ast.Statement, environment *object.Environment)
 		return completion{kind: breakCompletion}, nil
 	case *ast.ContinueStatement:
 		return completion{kind: continueCompletion}, nil
+	case *ast.ReturnStatement:
+		return evaluateReturnStatement(statement, environment)
 	default:
 		return completion{}, Error{
 			Kind:     RuntimeError,

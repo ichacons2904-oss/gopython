@@ -391,6 +391,67 @@ func TestEvaluatePrintAndRange(t *testing.T) {
 	}
 }
 
+func TestEvaluateFunctionCall(t *testing.T) {
+	program := parseProgram(t, "def square(value):\n    return value * value\nsquare(4)\n")
+
+	result, err := EvaluateProgram(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.Integer{Value: 16}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
+func TestEvaluateFunctionUsesClosure(t *testing.T) {
+	program := parseProgram(t, "prefix = \"hello \"\ndef greet(name):\n    return prefix + name\ngreet(\"world\")\n")
+
+	result, err := EvaluateProgram(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.String{Value: "hello world"}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
+func TestEvaluateFunctionReturnsNoneImplicitly(t *testing.T) {
+	program := parseProgram(t, "def remember():\n    value = 42\nremember()\n")
+	environment := object.NewEnvironment(nil)
+
+	result, err := EvaluateProgram(program, environment)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != (object.None{}) {
+		t.Fatalf("result = %#v, want object.None{}", result)
+	}
+	if _, ok := environment.Get("value"); ok {
+		t.Fatal("function-local value leaked into the caller environment")
+	}
+}
+
+func TestEvaluateFunctionReportsWrongArgumentCount(t *testing.T) {
+	program := parseProgram(t, "def add(left, right):\n    return left + right\nadd(1)\n")
+
+	_, err := EvaluateProgram(program, nil)
+	if err == nil {
+		t.Fatal("EvaluateProgram() returned nil error")
+	}
+
+	evaluationError, ok := err.(Error)
+	if !ok {
+		t.Fatalf("error type = %T, want eval.Error", err)
+	}
+	if evaluationError.Kind != TypeError {
+		t.Fatalf("error kind = %s, want %s", evaluationError.Kind, TypeError)
+	}
+}
+
 func parseProgram(t *testing.T, source string) *ast.Program {
 	t.Helper()
 

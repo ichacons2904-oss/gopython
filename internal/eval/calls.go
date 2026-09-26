@@ -50,9 +50,39 @@ func invokeBuiltin(builtin object.Builtin, arguments []object.Value, position so
 }
 
 func invokeFunction(function object.Function, arguments []object.Value, position source.Position) (object.Value, error) {
-	return nil, Error{
-		Kind:     RuntimeError,
-		Message:  fmt.Sprintf("function %q is not executable yet", function.Name),
-		Position: position,
+	if len(arguments) != len(function.Parameters) {
+		return nil, Error{
+			Kind: TypeError,
+			Message: fmt.Sprintf(
+				"%s() expected %d arguments, got %d",
+				function.Name,
+				len(function.Parameters),
+				len(arguments),
+			),
+			Position: position,
+		}
+	}
+
+	environment := object.NewEnvironment(function.Closure)
+	for index, parameter := range function.Parameters {
+		environment.Set(parameter.Name, arguments[index])
+	}
+
+	outcome, err := evaluateStatements(function.Body, environment)
+	if err != nil {
+		return nil, err
+	}
+
+	switch outcome.kind {
+	case returnCompletion:
+		return outcome.value, nil
+	case normalCompletion:
+		return object.None{}, nil
+	default:
+		return nil, Error{
+			Kind:     RuntimeError,
+			Message:  fmt.Sprintf("unexpected %s in function %q", outcome.kind, function.Name),
+			Position: position,
+		}
 	}
 }
