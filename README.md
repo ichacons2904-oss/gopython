@@ -28,3 +28,16 @@ source → lexer → parser/AST → evaluator/runtime → output
 go test ./...
 go run ./cmd/gopython
 ```
+
+## Docker
+
+```bash
+docker build -t gopython .
+docker run --rm gopython
+```
+
+To run another source file from the host:
+
+```bash
+docker run --rm -v "$PWD:/workspace" gopython /workspace/path/to/program.py
+```
