@@ -57,6 +57,12 @@ func compareValues(left, right object.Value, operator lexer.TokenType, position 
 		}
 	}
 
+	if leftNumber, ok := toFloat(left); ok {
+		if rightNumber, ok := toFloat(right); ok {
+			return compareFloats(leftNumber, rightNumber, operator), nil
+		}
+	}
+
 	if leftString, ok := left.(object.String); ok {
 		if rightString, ok := right.(object.String); ok {
 			return compareStrings(leftString.Value, rightString.Value, operator), nil
@@ -78,8 +84,14 @@ func compareValues(left, right object.Value, operator lexer.TokenType, position 
 func valuesEqual(left, right object.Value) bool {
 	switch left := left.(type) {
 	case object.Integer:
-		right, ok := right.(object.Integer)
-		return ok && left.Value == right.Value
+		if right, ok := right.(object.Integer); ok {
+			return left.Value == right.Value
+		}
+		rightNumber, ok := toFloat(right)
+		return ok && float64(left.Value) == rightNumber
+	case object.Float:
+		rightNumber, ok := toFloat(right)
+		return ok && left.Value == rightNumber
 	case object.String:
 		right, ok := right.(object.String)
 		return ok && left.Value == right.Value
@@ -95,6 +107,21 @@ func valuesEqual(left, right object.Value) bool {
 }
 
 func compareIntegers(left, right int64, operator lexer.TokenType) bool {
+	switch operator {
+	case lexer.LessThan:
+		return left < right
+	case lexer.LessEqual:
+		return left <= right
+	case lexer.GreaterThan:
+		return left > right
+	case lexer.GreaterEqual:
+		return left >= right
+	default:
+		return false
+	}
+}
+
+func compareFloats(left, right float64, operator lexer.TokenType) bool {
 	switch operator {
 	case lexer.LessThan:
 		return left < right

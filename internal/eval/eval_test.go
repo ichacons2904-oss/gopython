@@ -47,6 +47,14 @@ func TestEvaluateNumericOperators(t *testing.T) {
 		{source: "7 % -3", want: object.Integer{Value: -2}},
 		{source: "-7 % -3", want: object.Integer{Value: -1}},
 		{source: "6 % -3", want: object.Integer{Value: 0}},
+		{source: "5 + 0.5", want: object.Float{Value: 5.5}},
+		{source: "1.5 * 2", want: object.Float{Value: 3}},
+		{source: "7.0 / 2", want: object.Float{Value: 3.5}},
+		{source: "-7.5 % 2", want: object.Float{Value: 0.5}},
+		{source: "-(-0.5)", want: object.Float{Value: 0.5}},
+		{source: "1 == 1.0", want: object.Boolean{Value: true}},
+		{source: "1 < 1.5", want: object.Boolean{Value: true}},
+		{source: "not 0.0", want: object.Boolean{Value: true}},
 	}
 
 	for _, test := range tests {

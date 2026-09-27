@@ -2,6 +2,7 @@ package eval
 
 import (
 	"fmt"
+	"math"
 
 	"gopython/internal/ast"
 	"gopython/internal/lexer"
@@ -60,25 +61,29 @@ func evaluateUnary(expression *ast.UnaryExpression, environment *object.Environm
 	if expression.Operator == lexer.Not {
 		return object.Boolean{Value: !isTruthy(operand)}, nil
 	}
-
-	integer, ok := operand.(object.Integer)
-	if !ok {
+	if expression.Operator != lexer.Plus && expression.Operator != lexer.Minus {
 		return nil, Error{
-			Kind:     TypeError,
-			Message:  fmt.Sprintf("unary operator %s requires an integer, got %s", expression.Operator, operand.Type()),
+			Kind:     RuntimeError,
+			Message:  fmt.Sprintf("unsupported unary operator %s", expression.Operator),
 			Position: expression.Position(),
 		}
 	}
 
-	switch expression.Operator {
-	case lexer.Plus:
-		return integer, nil
-	case lexer.Minus:
-		return object.Integer{Value: -integer.Value}, nil
+	switch operand := operand.(type) {
+	case object.Integer:
+		if expression.Operator == lexer.Minus {
+			return object.Integer{Value: -operand.Value}, nil
+		}
+		return operand, nil
+	case object.Float:
+		if expression.Operator == lexer.Minus {
+			return object.Float{Value: -operand.Value}, nil
+		}
+		return operand, nil
 	default:
 		return nil, Error{
-			Kind:     RuntimeError,
-			Message:  fmt.Sprintf("unsupported unary operator %s", expression.Operator),
+			Kind:     TypeError,
+			Message:  fmt.Sprintf("unary operator %s requires a number, got %s", expression.Operator, operand.Type()),
 			Position: expression.Position(),
 		}
 	}
@@ -107,13 +112,19 @@ func evaluateBinary(expression *ast.BinaryExpression, environment *object.Enviro
 		}
 	}
 
-	leftInteger, leftIsInteger := left.(object.Integer)
-	rightInteger, rightIsInteger := right.(object.Integer)
-	if !leftIsInteger || !rightIsInteger {
+	if leftInteger, ok := left.(object.Integer); ok {
+		if rightInteger, ok := right.(object.Integer); ok {
+			return evaluateIntegerArithmetic(expression, leftInteger.Value, rightInteger.Value)
+		}
+	}
+
+	leftNumber, leftIsNumber := toFloat(left)
+	rightNumber, rightIsNumber := toFloat(right)
+	if !leftIsNumber || !rightIsNumber {
 		return nil, Error{
 			Kind: TypeError,
 			Message: fmt.Sprintf(
-				"operator %s requires integers, got %s and %s",
+				"operator %s requires numbers, got %s and %s",
 				expression.Operator,
 				left.Type(),
 				right.Type(),
@@ -121,44 +132,96 @@ func evaluateBinary(expression *ast.BinaryExpression, environment *object.Enviro
 			Position: expression.Position(),
 		}
 	}
+	return evaluateFloatArithmetic(expression, leftNumber, rightNumber)
+}
 
+func evaluateIntegerArithmetic(expression *ast.BinaryExpression, left, right int64) (object.Value, error) {
 	switch expression.Operator {
 	case lexer.Plus:
-		return object.Integer{Value: leftInteger.Value + rightInteger.Value}, nil
+		return object.Integer{Value: left + right}, nil
 	case lexer.Minus:
-		return object.Integer{Value: leftInteger.Value - rightInteger.Value}, nil
+		return object.Integer{Value: left - right}, nil
 	case lexer.Asterisk:
-		return object.Integer{Value: leftInteger.Value * rightInteger.Value}, nil
+		return object.Integer{Value: left * right}, nil
 	case lexer.Slash:
-		if rightInteger.Value == 0 {
-			return nil, Error{
-				Kind:     ZeroDivisionError,
-				Message:  "division by zero",
-				Position: expression.Position(),
-			}
+		if right == 0 {
+			return nil, divisionByZero(expression)
 		}
-		return object.Integer{Value: leftInteger.Value / rightInteger.Value}, nil
+		return object.Integer{Value: left / right}, nil
 	case lexer.Percent:
-		if rightInteger.Value == 0 {
-			return nil, Error{
-				Kind:     ZeroDivisionError,
-				Message:  "integer modulo by zero",
-				Position: expression.Position(),
-			}
+		if right == 0 {
+			return nil, divisionByZero(expression)
 		}
-		return object.Integer{Value: floorModulo(leftInteger.Value, rightInteger.Value)}, nil
+		return object.Integer{Value: floorModulo(left, right)}, nil
 	default:
-		return nil, Error{
-			Kind:     RuntimeError,
-			Message:  fmt.Sprintf("unsupported binary operator %s", expression.Operator),
-			Position: expression.Position(),
+		return nil, unsupportedBinaryOperator(expression)
+	}
+}
+
+func evaluateFloatArithmetic(expression *ast.BinaryExpression, left, right float64) (object.Value, error) {
+	switch expression.Operator {
+	case lexer.Plus:
+		return object.Float{Value: left + right}, nil
+	case lexer.Minus:
+		return object.Float{Value: left - right}, nil
+	case lexer.Asterisk:
+		return object.Float{Value: left * right}, nil
+	case lexer.Slash:
+		if right == 0 {
+			return nil, divisionByZero(expression)
 		}
+		return object.Float{Value: left / right}, nil
+	case lexer.Percent:
+		if right == 0 {
+			return nil, divisionByZero(expression)
+		}
+		return object.Float{Value: floorModuloFloat(left, right)}, nil
+	default:
+		return nil, unsupportedBinaryOperator(expression)
+	}
+}
+
+func toFloat(value object.Value) (float64, bool) {
+	switch value := value.(type) {
+	case object.Integer:
+		return float64(value.Value), true
+	case object.Float:
+		return value.Value, true
+	default:
+		return 0, false
+	}
+}
+
+func divisionByZero(expression *ast.BinaryExpression) error {
+	return Error{
+		Kind:     ZeroDivisionError,
+		Message:  "division by zero",
+		Position: expression.Position(),
+	}
+}
+
+func unsupportedBinaryOperator(expression *ast.BinaryExpression) error {
+	return Error{
+		Kind:     RuntimeError,
+		Message:  fmt.Sprintf("unsupported binary operator %s", expression.Operator),
+		Position: expression.Position(),
 	}
 }
 
 func floorModulo(dividend, divisor int64) int64 {
 	remainder := dividend % divisor
 	if remainder != 0 && (remainder < 0) != (divisor < 0) {
+		remainder += divisor
+	}
+	return remainder
+}
+
+func floorModuloFloat(dividend, divisor float64) float64 {
+	remainder := math.Mod(dividend, divisor)
+	if remainder == 0 {
+		return math.Copysign(0, divisor)
+	}
+	if (remainder < 0) != (divisor < 0) {
 		remainder += divisor
 	}
 	return remainder

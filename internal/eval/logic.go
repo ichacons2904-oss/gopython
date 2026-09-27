@@ -12,6 +12,8 @@ func isTruthy(value object.Value) bool {
 		return value.Value
 	case object.Integer:
 		return value.Value != 0
+	case object.Float:
+		return value.Value != 0
 	case object.String:
 		return value.Value != ""
 	case object.None:
