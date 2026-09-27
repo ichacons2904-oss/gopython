@@ -23,6 +23,17 @@ func (value Range) Display() string {
 	return fmt.Sprintf("range(%d, %d, %d)", value.Start, value.Stop, value.Step)
 }
 
+func (value Range) Len() int64 {
+	switch {
+	case value.Step > 0 && value.Start < value.Stop:
+		return (value.Stop - value.Start + value.Step - 1) / value.Step
+	case value.Step < 0 && value.Start > value.Stop:
+		return (value.Start - value.Stop - value.Step - 1) / -value.Step
+	default:
+		return 0
+	}
+}
+
 func (value Range) Iterator() Iterator {
 	return &rangeIterator{
 		current: value.Start,
