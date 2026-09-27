@@ -1,11 +1,16 @@
 package object
 
-import "strconv"
+import (
+	"math"
+	"strconv"
+	"strings"
+)
 
 type Type string
 
 const (
 	IntegerType  Type = "INTEGER"
+	FloatType    Type = "FLOAT"
 	StringType   Type = "STRING"
 	BooleanType  Type = "BOOLEAN"
 	NoneType     Type = "NONE"
@@ -29,6 +34,36 @@ func (Integer) Type() Type {
 
 func (value Integer) Display() string {
 	return strconv.FormatInt(value.Value, 10)
+}
+
+type Float struct {
+	Value float64
+}
+
+func (Float) Type() Type {
+	return FloatType
+}
+
+func (value Float) Display() string {
+	switch {
+	case math.IsNaN(value.Value):
+		return "nan"
+	case math.IsInf(value.Value, 1):
+		return "inf"
+	case math.IsInf(value.Value, -1):
+		return "-inf"
+	}
+
+	magnitude := math.Abs(value.Value)
+	if magnitude != 0 && (magnitude < 1e-4 || magnitude >= 1e16) {
+		return strconv.FormatFloat(value.Value, 'e', -1, 64)
+	}
+
+	text := strconv.FormatFloat(value.Value, 'f', -1, 64)
+	if !strings.Contains(text, ".") {
+		text += ".0"
+	}
+	return text
 }
 
 type String struct {
