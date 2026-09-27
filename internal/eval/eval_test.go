@@ -541,6 +541,18 @@ outer() + " " + x
 	}
 }
 
+func TestEvaluatePassDoesNothing(t *testing.T) {
+	program := parseProgram(t, "def empty():\n    pass\nif True:\n    pass\nempty()\n")
+
+	result, err := EvaluateProgram(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != (object.None{}) {
+		t.Fatalf("result = %#v, want object.None{}", result)
+	}
+}
+
 func TestEvaluateFunctionReturnsNoneImplicitly(t *testing.T) {
 	program := parseProgram(t, "def remember():\n    value = 42\nremember()\n")
 	environment := object.NewEnvironment(nil)

@@ -44,6 +44,8 @@ func evaluateStatement(statement ast.Statement, environment *object.Environment)
 		return evaluateNonlocalStatement(statement, environment)
 	case *ast.GlobalStatement:
 		return evaluateGlobalStatement(statement, environment)
+	case *ast.PassStatement:
+		return completion{value: object.None{}}, nil
 	case *ast.BreakStatement:
 		return completion{kind: breakCompletion}, nil
 	case *ast.ContinueStatement:

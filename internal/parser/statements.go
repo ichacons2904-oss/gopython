@@ -45,6 +45,8 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 		return parser.parseNonlocalStatement()
 	case lexer.Global:
 		return parser.parseGlobalStatement()
+	case lexer.Pass:
+		return parser.parsePassStatement()
 	case lexer.Break:
 		if parser.loopDepth == 0 {
 			return nil, Error{Token: parser.current(), Message: "break outside loop"}
@@ -167,4 +169,12 @@ func (parser *Parser) parseNameList() ([]ast.Identifier, error) {
 		return nil, err
 	}
 	return names, nil
+}
+
+func (parser *Parser) parsePassStatement() (ast.Statement, error) {
+	passToken := parser.advance()
+	if _, err := parser.expect(lexer.Newline); err != nil {
+		return nil, err
+	}
+	return &ast.PassStatement{Pos: positionOf(passToken)}, nil
 }

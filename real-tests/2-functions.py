@@ -46,7 +46,7 @@ def fib(n):
 
 
 def noreturn():
-    x = 1
+    pass
 
 
 def emptyreturn():

@@ -58,3 +58,13 @@ func (node NonlocalStatement) Position() source.Position {
 }
 
 func (*NonlocalStatement) statementNode() {}
+
+type PassStatement struct {
+	Pos source.Position
+}
+
+func (node PassStatement) Position() source.Position {
+	return node.Pos
+}
+
+func (*PassStatement) statementNode() {}
