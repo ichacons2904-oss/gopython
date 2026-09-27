@@ -30,6 +30,26 @@ go run ./cmd/gopython examples/functions.py
 go run ./cmd/gopython                         # ejecuta el REPL
 ```
 
+## REPL
+
+`gopython` abre un intérprete interactivo, donde las variables y
+funciones se conservan entre entradas, las expresiones muestran su valor y los errores no cierran la sesión.
+
+Una línea que termina en `:` abre un bloque: el REPL muestra `...` y sigue
+leyendo hasta una línea vacía. Ctrl-D sale.
+
+```text
+>>> def double(x):
+...     return x * 2
+...
+>>> double(21)
+42
+>>> "hola"
+'hola'
+>>> missing
+NameError at 1:1: name "missing" is not defined
+```
+
 ## Docker
 
 ```bash
