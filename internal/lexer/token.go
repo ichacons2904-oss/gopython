@@ -17,6 +17,7 @@ const (
 	For      TokenType = "FOR"
 	In       TokenType = "IN"
 	Def      TokenType = "DEF"
+	Nonlocal TokenType = "NONLOCAL"
 	Return   TokenType = "RETURN"
 	Break    TokenType = "BREAK"
 	Continue TokenType = "CONTINUE"
@@ -66,6 +67,7 @@ var keywords = map[string]TokenType{
 	"for":      For,
 	"in":       In,
 	"def":      Def,
+	"nonlocal": Nonlocal,
 	"return":   Return,
 	"break":    Break,
 	"continue": Continue,

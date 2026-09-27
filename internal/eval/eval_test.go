@@ -484,6 +484,41 @@ hello("ana") + bye("ana")
 	}
 }
 
+func TestEvaluateNonlocalRebindsEnclosingVariable(t *testing.T) {
+	program := parseProgram(t, `def make_counter():
+    i = 0
+    def count():
+        nonlocal i
+        i = i + 1
+        return i
+    return count
+counter = make_counter()
+counter()
+counter()
+`)
+
+	result, err := EvaluateProgram(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != (object.Integer{Value: 2}) {
+		t.Fatalf("result = %#v, want 2", result)
+	}
+}
+
+func TestEvaluateNonlocalRequiresEnclosingBinding(t *testing.T) {
+	program := parseProgram(t, "x = 1\ndef f():\n    nonlocal x\n    x = 2\nf()\n")
+
+	_, err := EvaluateProgram(program, nil)
+	evaluationError, ok := err.(Error)
+	if !ok {
+		t.Fatalf("error = %v, want eval.Error", err)
+	}
+	if evaluationError.Kind != SyntaxError {
+		t.Fatalf("error kind = %s, want %s", evaluationError.Kind, SyntaxError)
+	}
+}
+
 func TestEvaluateFunctionReturnsNoneImplicitly(t *testing.T) {
 	program := parseProgram(t, "def remember():\n    value = 42\nremember()\n")
 	environment := object.NewEnvironment(nil)

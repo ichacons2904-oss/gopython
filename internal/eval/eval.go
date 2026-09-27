@@ -40,6 +40,8 @@ func evaluateStatement(statement ast.Statement, environment *object.Environment)
 		return evaluateWhileStatement(statement, environment)
 	case *ast.ForStatement:
 		return evaluateForStatement(statement, environment)
+	case *ast.NonlocalStatement:
+		return evaluateNonlocalStatement(statement, environment)
 	case *ast.BreakStatement:
 		return completion{kind: breakCompletion}, nil
 	case *ast.ContinueStatement:

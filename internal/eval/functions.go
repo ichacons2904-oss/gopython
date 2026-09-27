@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"fmt"
+
 	"gopython/internal/ast"
 	"gopython/internal/object"
 )
@@ -26,4 +28,17 @@ func evaluateReturnStatement(statement *ast.ReturnStatement, environment *object
 		return completion{}, err
 	}
 	return completion{value: value, kind: returnCompletion}, nil
+}
+
+func evaluateNonlocalStatement(statement *ast.NonlocalStatement, environment *object.Environment) (completion, error) {
+	for _, name := range statement.Names {
+		if !environment.DeclareNonlocal(name.Name) {
+			return completion{}, Error{
+				Kind:     SyntaxError,
+				Message:  fmt.Sprintf("no binding for nonlocal %q found", name.Name),
+				Position: name.Pos,
+			}
+		}
+	}
+	return completion{value: object.None{}}, nil
 }

@@ -13,6 +13,7 @@ const (
 	TypeError         ErrorKind = "TypeError"
 	ZeroDivisionError ErrorKind = "ZeroDivisionError"
 	RuntimeError      ErrorKind = "RuntimeError"
+	SyntaxError       ErrorKind = "SyntaxError"
 )
 
 type Error struct {

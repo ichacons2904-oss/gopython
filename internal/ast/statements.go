@@ -36,3 +36,14 @@ func (node FunctionDefinition) Position() source.Position {
 }
 
 func (*FunctionDefinition) statementNode() {}
+
+type NonlocalStatement struct {
+	Pos   source.Position
+	Names []Identifier
+}
+
+func (node NonlocalStatement) Position() source.Position {
+	return node.Pos
+}
+
+func (*NonlocalStatement) statementNode() {}

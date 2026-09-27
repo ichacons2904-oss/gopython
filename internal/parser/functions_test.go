@@ -58,6 +58,22 @@ func TestParseFunctionDefinitionsInsideBlocks(t *testing.T) {
 	}
 }
 
+func TestRejectsNonlocalAtModuleLevel(t *testing.T) {
+	tokens, err := lexer.New("nonlocal x\n").Lex()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = New(tokens).Parse()
+	parserError, ok := err.(Error)
+	if !ok {
+		t.Fatalf("error = %v, want parser.Error", err)
+	}
+	if parserError.Message != "nonlocal declaration not allowed at module level" {
+		t.Fatalf("error message = %q", parserError.Message)
+	}
+}
+
 func TestRejectsReturnOutsideFunction(t *testing.T) {
 	tokens, err := lexer.New("if x:\n    return x\n").Lex()
 	if err != nil {

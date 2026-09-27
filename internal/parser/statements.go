@@ -38,6 +38,11 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 			return nil, Error{Token: parser.current(), Message: "return outside function"}
 		}
 		return parser.parseReturnStatement()
+	case lexer.Nonlocal:
+		if parser.functionDepth == 0 {
+			return nil, Error{Token: parser.current(), Message: "nonlocal declaration not allowed at module level"}
+		}
+		return parser.parseNonlocalStatement()
 	case lexer.Break:
 		if parser.loopDepth == 0 {
 			return nil, Error{Token: parser.current(), Message: "break outside loop"}
@@ -124,4 +129,23 @@ func (parser *Parser) parseContinueStatement() (ast.Statement, error) {
 		return nil, err
 	}
 	return &ast.ContinueStatement{Pos: positionOf(continueToken)}, nil
+}
+
+func (parser *Parser) parseNonlocalStatement() (ast.Statement, error) {
+	nonlocalToken := parser.advance()
+	names := []ast.Identifier{}
+	for {
+		nameToken, err := parser.expect(lexer.Identifier)
+		if err != nil {
+			return nil, err
+		}
+		names = append(names, ast.Identifier{Pos: positionOf(nameToken), Name: nameToken.Lexeme})
+		if !parser.match(lexer.Comma) {
+			break
+		}
+	}
+	if _, err := parser.expect(lexer.Newline); err != nil {
+		return nil, err
+	}
+	return &ast.NonlocalStatement{Pos: positionOf(nonlocalToken), Names: names}, nil
 }
