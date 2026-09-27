@@ -97,9 +97,8 @@ def main():
 
     os.makedirs(resultsdir, exist_ok=True)
     with open(os.path.join(resultsdir, "comparison.md"), "w") as report:
-        report.write(f"# Comparación entre implementaciones\n\n")
-        report.write(f"Fecha: {date.today()}. Máquina: {platform.machine()}, {platform.platform()}.\n\n")
-        report.write("hyperfine, 2 corridas de calentamiento y 10 medidas. Tiempo medio ± desvío; entre paréntesis, relativo a CPython.\n\n")
+        report.write("# Benchmarks\n\n")
+        report.write(f"{date.today()} · {platform.machine()} {platform.system()} · hyperfine, 10 corridas. Media en ms; entre paréntesis, relativo a CPython.\n\n")
         report.write("| Intérprete | Versión |\n| --- | --- |\n")
         for name, interpreter in interpreters.items():
             report.write(f"| {name} | {version(name, interpreter)} |\n")
@@ -112,8 +111,8 @@ def main():
                 if name not in results:
                     cells.append("—")
                     continue
-                mean, stddev = results[name]
-                cells.append(f"{mean * 1000:.0f} ± {stddev * 1000:.0f} ms ({mean / baseline:.2f}x)")
+                mean, _ = results[name]
+                cells.append(f"{mean * 1000:.0f} ({mean / baseline:.2f}x)")
             report.write(f"| `{program}` | " + " | ".join(cells) + " |\n")
     print(f"written {os.path.join(resultsdir, 'comparison.md')}")
 
