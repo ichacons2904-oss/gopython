@@ -463,6 +463,27 @@ func TestEvaluateFunctionUsesClosure(t *testing.T) {
 	}
 }
 
+func TestEvaluateClosureKeepsEnclosingEnvironment(t *testing.T) {
+	program := parseProgram(t, `def make_greeter(greeting):
+    def greet(name):
+        return greeting + name
+    return greet
+hello = make_greeter("hola ")
+bye = make_greeter("chau ")
+hello("ana") + bye("ana")
+`)
+
+	result, err := EvaluateProgram(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := object.String{Value: "hola anachau ana"}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
 func TestEvaluateFunctionReturnsNoneImplicitly(t *testing.T) {
 	program := parseProgram(t, "def remember():\n    value = 42\nremember()\n")
 	environment := object.NewEnvironment(nil)

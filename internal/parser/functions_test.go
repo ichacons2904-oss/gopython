@@ -41,43 +41,20 @@ func TestParseFunctionDefinition(t *testing.T) {
 	}
 }
 
-func TestRejectsNestedFunctionDefinitions(t *testing.T) {
-	source := "def outer():\n    def inner():\n        return 1\n"
-	tokens, err := lexer.New(source).Lex()
-	if err != nil {
-		t.Fatal(err)
+func TestParseFunctionDefinitionsInsideBlocks(t *testing.T) {
+	sources := []string{
+		"def outer():\n    def inner():\n        return 1\n    return inner\n",
+		"if condition:\n    def inner():\n        return 1\n",
 	}
 
-	_, err = New(tokens).Parse()
-	if err == nil {
-		t.Fatal("Parse() returned nil error")
-	}
-	parserError, ok := err.(Error)
-	if !ok {
-		t.Fatalf("error type = %T, want parser.Error", err)
-	}
-	if parserError.Message != "nested function definitions are not supported" {
-		t.Fatalf("error message = %q", parserError.Message)
-	}
-}
-
-func TestRejectsFunctionDefinitionInsideConditional(t *testing.T) {
-	source := "if condition:\n    def inner():\n        return 1\n"
-	tokens, err := lexer.New(source).Lex()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = New(tokens).Parse()
-	if err == nil {
-		t.Fatal("Parse() returned nil error")
-	}
-	parserError, ok := err.(Error)
-	if !ok {
-		t.Fatalf("error type = %T, want parser.Error", err)
-	}
-	if parserError.Message != "nested function definitions are not supported" {
-		t.Fatalf("error message = %q", parserError.Message)
+	for _, source := range sources {
+		tokens, err := lexer.New(source).Lex()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := New(tokens).Parse(); err != nil {
+			t.Fatalf("Parse(%q) returned error: %v", source, err)
+		}
 	}
 }
 

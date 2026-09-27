@@ -32,9 +32,6 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 	case lexer.For:
 		return parser.parseForStatement()
 	case lexer.Def:
-		if parser.blockDepth > 0 {
-			return nil, Error{Token: parser.current(), Message: "nested function definitions are not supported"}
-		}
 		return parser.parseFunctionDefinition()
 	case lexer.Return:
 		if parser.functionDepth == 0 {

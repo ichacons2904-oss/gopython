@@ -12,7 +12,6 @@ type Parser struct {
 	position      int
 	loopDepth     int
 	functionDepth int
-	blockDepth    int
 }
 
 type Error struct {

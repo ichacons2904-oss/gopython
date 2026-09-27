@@ -25,11 +25,6 @@ func (parser *Parser) parseFunctionBlock() ([]ast.Statement, error) {
 }
 
 func (parser *Parser) parseBlock() ([]ast.Statement, error) {
-	parser.blockDepth++
-	defer func() {
-		parser.blockDepth--
-	}()
-
 	if _, err := parser.expect(lexer.Newline); err != nil {
 		return nil, err
 	}
