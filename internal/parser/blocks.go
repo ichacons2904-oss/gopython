@@ -36,8 +36,8 @@ func (parser *Parser) parseBlock() ([]ast.Statement, error) {
 	if _, err := parser.expect(lexer.Newline); err != nil {
 		return nil, err
 	}
-	if _, err := parser.expect(lexer.Indent); err != nil {
-		return nil, err
+	if !parser.match(lexer.Indent) {
+		return nil, Error{Token: parser.current(), Message: "expected an indented block"}
 	}
 
 	statements := []ast.Statement{}

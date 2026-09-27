@@ -25,6 +25,8 @@ func (parser *Parser) Parse() (*ast.Program, error) {
 
 func (parser *Parser) parseStatement() (ast.Statement, error) {
 	switch parser.current().Type {
+	case lexer.Indent:
+		return nil, Error{Token: parser.current(), Message: "unexpected indent"}
 	case lexer.If:
 		return parser.parseIfStatement()
 	case lexer.While:

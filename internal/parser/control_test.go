@@ -76,7 +76,7 @@ func TestParseRejectsEmptyBlock(t *testing.T) {
 	if !ok {
 		t.Fatalf("error type = %T, want parser.Error", err)
 	}
-	if parserError.Message != "expected INDENT, got EOF" {
+	if parserError.Message != "expected an indented block" {
 		t.Fatalf("error message = %q", parserError.Message)
 	}
 }
@@ -101,5 +101,17 @@ func TestParseSingleLineSuites(t *testing.T) {
 	}
 	if _, err := New(tokens).Parse(); err == nil {
 		t.Fatal("compound statement in a single-line suite returned nil error")
+	}
+}
+
+func TestRejectsUnexpectedIndent(t *testing.T) {
+	tokens, err := lexer.New("x = 1\n    y = 2\n").Lex()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = New(tokens).Parse()
+	parserError, ok := err.(Error)
+	if !ok || parserError.Message != "unexpected indent" {
+		t.Fatalf("error = %v, want unexpected indent", err)
 	}
 }
