@@ -54,6 +54,63 @@ func TestExpressionValuesAreEchoed(t *testing.T) {
 	}
 }
 
+func TestMultilineBlocks(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "function definition",
+			input: "def double(x):\n    return x * 2\n\ndouble(4)\n",
+			want:  ">>> ... ... >>> 8\n>>> ",
+		},
+		{
+			name:  "if with else",
+			input: "if 1 > 2:\n    print(\"a\")\nelse:\n    print(\"b\")\n\n",
+			want:  ">>> ... ... ... ... b\n>>> ",
+		},
+		{
+			name:  "nested blocks",
+			input: "for i in range(3):\n    if i != 1:\n        print(i)\n\n",
+			want:  ">>> ... ... ... 0\n2\n>>> ",
+		},
+		{
+			name:  "error reports the line inside the block",
+			input: "if True:\n    x = 1\n    print(missing)\n\n",
+			want:  ">>> ... ... ... " + `NameError at 3:11: name "missing" is not defined` + "\n>>> ",
+		},
+		{
+			name:  "end of input finishes the block",
+			input: "if True:\n    print(1)\n",
+			want:  ">>> ... ... 1\n>>> ",
+		},
+		{
+			name:  "colon inside a string",
+			input: `x = "a:"` + "\nx\n",
+			want:  ">>> >>> 'a:'\n>>> ",
+		},
+		{
+			name:  "colon inside a comment",
+			input: "x = 1 # note:\nx\n",
+			want:  ">>> >>> 1\n>>> ",
+		},
+		{
+			name:  "block header with a comment",
+			input: "if True: # check\n    print(1)\n\n",
+			want:  ">>> ... ... 1\n>>> ",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := run(test.input); got != test.want {
+				t.Fatalf("got %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
 func TestEmptyLineIsIgnored(t *testing.T) {
 	got := run("\nprint(1)\n")
 

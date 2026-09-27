@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"strings"
 
 	"gopython/internal/ast"
 	"gopython/internal/builtin"
@@ -13,7 +14,10 @@ import (
 	"gopython/internal/parser"
 )
 
-const prompt = ">>> "
+const (
+	prompt             = ">>> "
+	continuationPrompt = "... "
+)
 
 func Start(input io.Reader, output io.Writer) {
 	scanner := bufio.NewScanner(input)
@@ -22,11 +26,12 @@ func Start(input io.Reader, output io.Writer) {
 
 	for {
 		fmt.Fprint(output, prompt)
-		if !scanner.Scan() {
+		source, ok := readEntry(scanner, output)
+		if !ok {
 			return
 		}
 
-		value, err := execute(scanner.Text(), environment)
+		value, err := execute(source, environment)
 		if err != nil {
 			fmt.Fprintln(output, err)
 			continue
@@ -37,8 +42,48 @@ func Start(input io.Reader, output io.Writer) {
 	}
 }
 
-func execute(line string, environment *object.Environment) (object.Value, error) {
+func readEntry(scanner *bufio.Scanner, output io.Writer) (string, bool) {
+	if !scanner.Scan() {
+		return "", false
+	}
+	first := scanner.Text()
+	if !opensBlock(first) {
+		return first, true
+	}
+
+	lines := []string{first}
+	for {
+		fmt.Fprint(output, continuationPrompt)
+		if !scanner.Scan() {
+			break
+		}
+		line := scanner.Text()
+		if strings.TrimSpace(line) == "" {
+			break
+		}
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n") + "\n", true
+}
+
+func opensBlock(line string) bool {
 	tokens, err := lexer.New(line).Lex()
+	if err != nil {
+		return false
+	}
+
+	for i := len(tokens) - 1; i >= 0; i-- {
+		switch tokens[i].Type {
+		case lexer.Newline, lexer.Dedent, lexer.EOF:
+			continue
+		}
+		return tokens[i].Type == lexer.Colon
+	}
+	return false
+}
+
+func execute(source string, environment *object.Environment) (object.Value, error) {
+	tokens, err := lexer.New(source).Lex()
 	if err != nil {
 		return nil, err
 	}
