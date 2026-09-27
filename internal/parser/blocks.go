@@ -25,6 +25,14 @@ func (parser *Parser) parseFunctionBlock() ([]ast.Statement, error) {
 }
 
 func (parser *Parser) parseBlock() ([]ast.Statement, error) {
+	if !parser.check(lexer.Newline) && !isCompoundStatement(parser.current().Type) {
+		statement, err := parser.parseStatement()
+		if err != nil {
+			return nil, err
+		}
+		return []ast.Statement{statement}, nil
+	}
+
 	if _, err := parser.expect(lexer.Newline); err != nil {
 		return nil, err
 	}
@@ -55,4 +63,13 @@ func (parser *Parser) parseBlock() ([]ast.Statement, error) {
 		return nil, err
 	}
 	return statements, nil
+}
+
+func isCompoundStatement(tokenType lexer.TokenType) bool {
+	switch tokenType {
+	case lexer.If, lexer.While, lexer.For, lexer.Def:
+		return true
+	default:
+		return false
+	}
 }

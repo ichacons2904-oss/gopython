@@ -80,3 +80,26 @@ func TestParseRejectsEmptyBlock(t *testing.T) {
 		t.Fatalf("error message = %q", parserError.Message)
 	}
 }
+
+func TestParseSingleLineSuites(t *testing.T) {
+	source := "def f(x): return x\nif x: y = 1\nelif y: pass\nelse: print(x)\nwhile x: break\nfor i in range(3): continue\n"
+	tokens, err := lexer.New(source).Lex()
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := New(tokens).Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(program.Statements) != 4 {
+		t.Fatalf("got %d statements, want 4", len(program.Statements))
+	}
+
+	tokens, err = lexer.New("if x: if y: pass\n").Lex()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(tokens).Parse(); err == nil {
+		t.Fatal("compound statement in a single-line suite returned nil error")
+	}
+}
