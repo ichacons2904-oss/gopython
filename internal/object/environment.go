@@ -14,7 +14,7 @@ func NewEnvironment(parent *Environment) *Environment {
 }
 
 func (environment *Environment) Get(name string) (Value, bool) {
-	if target, ok := environment.redirects[name]; ok {
+	if target, ok := environment.lookupRedirect(name); ok {
 		value, found := target.values[name]
 		return value, found
 	}
@@ -28,7 +28,7 @@ func (environment *Environment) Get(name string) (Value, bool) {
 }
 
 func (environment *Environment) Set(name string, value Value) {
-	if target, ok := environment.redirects[name]; ok {
+	if target, ok := environment.lookupRedirect(name); ok {
 		target.values[name] = value
 		return
 	}
@@ -53,6 +53,14 @@ func (environment *Environment) DeclareGlobal(name string) {
 	if global != environment {
 		environment.redirect(name, global)
 	}
+}
+
+func (environment *Environment) lookupRedirect(name string) (*Environment, bool) {
+	if len(environment.redirects) == 0 {
+		return nil, false
+	}
+	target, ok := environment.redirects[name]
+	return target, ok
 }
 
 func (environment *Environment) redirect(name string, target *Environment) {
