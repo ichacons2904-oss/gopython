@@ -26,6 +26,7 @@ var (
 	_ Statement  = (*ReturnStatement)(nil)
 	_ Statement  = (*BreakStatement)(nil)
 	_ Statement  = (*NonlocalStatement)(nil)
+	_ Statement  = (*GlobalStatement)(nil)
 	_ Statement  = (*ContinueStatement)(nil)
 	_ Statement  = (*FunctionDefinition)(nil)
 )

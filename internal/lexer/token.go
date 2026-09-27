@@ -18,6 +18,7 @@ const (
 	In       TokenType = "IN"
 	Def      TokenType = "DEF"
 	Nonlocal TokenType = "NONLOCAL"
+	Global   TokenType = "GLOBAL"
 	Return   TokenType = "RETURN"
 	Break    TokenType = "BREAK"
 	Continue TokenType = "CONTINUE"
@@ -68,6 +69,7 @@ var keywords = map[string]TokenType{
 	"in":       In,
 	"def":      Def,
 	"nonlocal": Nonlocal,
+	"global":   Global,
 	"return":   Return,
 	"break":    Break,
 	"continue": Continue,

@@ -14,6 +14,10 @@ func NewEnvironment(parent *Environment) *Environment {
 }
 
 func (environment *Environment) Get(name string) (Value, bool) {
+	if target, ok := environment.redirects[name]; ok {
+		value, found := target.values[name]
+		return value, found
+	}
 	for current := environment; current != nil; current = current.parent {
 		if value, ok := current.values[name]; ok {
 			return value, true
@@ -39,6 +43,16 @@ func (environment *Environment) DeclareNonlocal(name string) bool {
 		}
 	}
 	return false
+}
+
+func (environment *Environment) DeclareGlobal(name string) {
+	global := environment
+	for global.parent != nil {
+		global = global.parent
+	}
+	if global != environment {
+		environment.redirect(name, global)
+	}
 }
 
 func (environment *Environment) redirect(name string, target *Environment) {

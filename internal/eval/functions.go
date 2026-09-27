@@ -42,3 +42,10 @@ func evaluateNonlocalStatement(statement *ast.NonlocalStatement, environment *ob
 	}
 	return completion{value: object.None{}}, nil
 }
+
+func evaluateGlobalStatement(statement *ast.GlobalStatement, environment *object.Environment) (completion, error) {
+	for _, name := range statement.Names {
+		environment.DeclareGlobal(name.Name)
+	}
+	return completion{value: object.None{}}, nil
+}

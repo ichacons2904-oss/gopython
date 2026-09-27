@@ -23,16 +23,18 @@ def second_block():
 
 
 def outer_block():
+    global y
     x = 1
+    y = 1
     check(x, 1)
-    check(y, 0)
+    check(y, 1)
     first_block()
     second_block()
 
 
 outer_block()
 check(x, 0)
-check(y, 0)
+check(y, 1)
 
 print("--- SIMPLE FUNCTION USAGE ---")
 

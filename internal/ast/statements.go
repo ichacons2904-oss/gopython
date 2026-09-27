@@ -42,6 +42,17 @@ type NonlocalStatement struct {
 	Names []Identifier
 }
 
+type GlobalStatement struct {
+	Pos   source.Position
+	Names []Identifier
+}
+
+func (node GlobalStatement) Position() source.Position {
+	return node.Pos
+}
+
+func (*GlobalStatement) statementNode() {}
+
 func (node NonlocalStatement) Position() source.Position {
 	return node.Pos
 }

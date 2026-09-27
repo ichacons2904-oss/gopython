@@ -519,6 +519,28 @@ func TestEvaluateNonlocalRequiresEnclosingBinding(t *testing.T) {
 	}
 }
 
+func TestEvaluateGlobalRebindsModuleVariable(t *testing.T) {
+	program := parseProgram(t, `x = "global"
+def outer():
+    x = "outer"
+    def inner():
+        global x
+        x = x + "!"
+        return x
+    return inner() + " " + x
+outer() + " " + x
+`)
+
+	result, err := EvaluateProgram(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := object.String{Value: "global! outer global!"}
+	if result != want {
+		t.Fatalf("result = %#v, want %#v", result, want)
+	}
+}
+
 func TestEvaluateFunctionReturnsNoneImplicitly(t *testing.T) {
 	program := parseProgram(t, "def remember():\n    value = 42\nremember()\n")
 	environment := object.NewEnvironment(nil)
