@@ -146,6 +146,13 @@ func (parser *Parser) parsePrimary() (ast.Expression, error) {
 			return nil, err
 		}
 		expression = &ast.IntegerLiteral{Pos: positionOf(token), Value: value}
+	case lexer.Float:
+		parser.advance()
+		value, err := parseFloat(token)
+		if err != nil {
+			return nil, err
+		}
+		expression = &ast.FloatLiteral{Pos: positionOf(token), Value: value}
 	case lexer.String:
 		parser.advance()
 		value, err := decodeString(token)
@@ -215,6 +222,17 @@ func isComparisonOperator(tokenType lexer.TokenType) bool {
 	default:
 		return false
 	}
+}
+
+func parseFloat(token lexer.Token) (float64, error) {
+	value, err := strconv.ParseFloat(token.Lexeme, 64)
+	if err != nil {
+		if numberError, ok := err.(*strconv.NumError); ok && numberError.Err == strconv.ErrRange {
+			return value, nil
+		}
+		return 0, Error{Token: token, Message: "invalid float literal"}
+	}
+	return value, nil
 }
 
 func parseInteger(token lexer.Token) (int64, error) {

@@ -161,12 +161,16 @@ func (lexer *Lexer) scanToken() error {
 		return nil
 	}
 
-	if isASCIIDigit(ch) {
+	if isASCIIDigit(ch) || (ch == '.' && lexer.nextIsDigit()) {
 		start := lexer.index
-		for lexer.index < len(lexer.chars) && isASCIIDigit(lexer.chars[lexer.index]) {
+		lexer.skipDigits()
+		tokenType := Integer
+		if lexer.index < len(lexer.chars) && lexer.chars[lexer.index] == '.' {
+			tokenType = Float
 			lexer.advance()
+			lexer.skipDigits()
 		}
-		lexer.emit(Integer, string(lexer.chars[start:lexer.index]), startLine, startColumn)
+		lexer.emit(tokenType, string(lexer.chars[start:lexer.index]), startLine, startColumn)
 		return nil
 	}
 
@@ -252,6 +256,17 @@ func (lexer *Lexer) skipComment() {
 
 func (lexer *Lexer) errorAt(message string) error {
 	return Error{Message: message, Line: lexer.line, Column: lexer.column}
+}
+
+func (lexer *Lexer) skipDigits() {
+	for lexer.index < len(lexer.chars) && isASCIIDigit(lexer.chars[lexer.index]) {
+		lexer.advance()
+	}
+}
+
+func (lexer *Lexer) nextIsDigit() bool {
+	next := lexer.index + 1
+	return next < len(lexer.chars) && isASCIIDigit(lexer.chars[next])
 }
 
 func isIdentifierStart(ch rune) bool {

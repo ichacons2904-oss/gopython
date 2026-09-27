@@ -16,6 +16,17 @@ func (node IntegerLiteral) Position() source.Position {
 
 func (*IntegerLiteral) expressionNode() {}
 
+type FloatLiteral struct {
+	Pos   source.Position
+	Value float64
+}
+
+func (node FloatLiteral) Position() source.Position {
+	return node.Pos
+}
+
+func (*FloatLiteral) expressionNode() {}
+
 type StringLiteral struct {
 	Pos   source.Position
 	Value string

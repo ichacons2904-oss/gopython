@@ -115,6 +115,23 @@ func TestLexRecognizesKeywordsAndOperators(t *testing.T) {
 	}
 }
 
+func TestLexNumbers(t *testing.T) {
+	tokens, err := New("1 1.5 2. .25").Lex()
+	if err != nil {
+		t.Fatalf("Lex() returned error: %v", err)
+	}
+
+	want := []Token{
+		{Type: Integer, Lexeme: "1", Line: 1, Column: 1},
+		{Type: Float, Lexeme: "1.5", Line: 1, Column: 3},
+		{Type: Float, Lexeme: "2.", Line: 1, Column: 7},
+		{Type: Float, Lexeme: ".25", Line: 1, Column: 10},
+	}
+	if !reflect.DeepEqual(tokens[:len(want)], want) {
+		t.Fatalf("tokens mismatch\n got: %#v\nwant: %#v", tokens[:len(want)], want)
+	}
+}
+
 func TestLexHandlesCommentsBlankLinesAndNestedIndentation(t *testing.T) {
 	source := "if outer:\n    if inner:\n        print(\"x\") # comment\n    print(\"y\")\n\nprint(\"z\")\n"
 	tokens, err := New(source).Lex()

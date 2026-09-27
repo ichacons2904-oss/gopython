@@ -7,6 +7,7 @@ const (
 
 	Identifier TokenType = "IDENTIFIER"
 	Integer    TokenType = "INTEGER"
+	Float      TokenType = "FLOAT"
 	String     TokenType = "STRING"
 
 	If       TokenType = "IF"

@@ -39,6 +39,9 @@ func TestEvaluateNumericOperators(t *testing.T) {
 		source string
 		want   object.Value
 	}{
+		{source: "1.5", want: object.Float{Value: 1.5}},
+		{source: "2.", want: object.Float{Value: 2}},
+		{source: ".25", want: object.Float{Value: 0.25}},
 		{source: "7 % 3", want: object.Integer{Value: 1}},
 		{source: "-7 % 3", want: object.Integer{Value: 2}},
 		{source: "7 % -3", want: object.Integer{Value: -2}},

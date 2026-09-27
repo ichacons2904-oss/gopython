@@ -9,6 +9,7 @@ import (
 var (
 	_ Node       = (*Program)(nil)
 	_ Expression = (*IntegerLiteral)(nil)
+	_ Expression = (*FloatLiteral)(nil)
 	_ Expression = (*StringLiteral)(nil)
 	_ Expression = (*BooleanLiteral)(nil)
 	_ Expression = (*NoneLiteral)(nil)
