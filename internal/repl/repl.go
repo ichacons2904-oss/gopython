@@ -28,6 +28,7 @@ func Start(input io.Reader, output io.Writer) {
 		fmt.Fprint(output, prompt)
 		source, ok := readEntry(scanner, output)
 		if !ok {
+			fmt.Fprintln(output)
 			return
 		}
 

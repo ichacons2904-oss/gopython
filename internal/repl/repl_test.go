@@ -15,7 +15,7 @@ func run(input string) string {
 func TestStateIsKeptBetweenLines(t *testing.T) {
 	got := run("x = 5\nprint(x + 1)\n")
 
-	want := ">>> >>> 6\n>>> "
+	want := ">>> >>> 6\n>>> \n"
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
@@ -24,7 +24,7 @@ func TestStateIsKeptBetweenLines(t *testing.T) {
 func TestErrorsDoNotStopTheSession(t *testing.T) {
 	got := run("print(missing)\nprint(1)\n")
 
-	want := `>>> NameError at 1:7: name "missing" is not defined` + "\n>>> 1\n>>> "
+	want := `>>> NameError at 1:7: name "missing" is not defined` + "\n>>> 1\n>>> \n"
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
@@ -36,13 +36,13 @@ func TestExpressionValuesAreEchoed(t *testing.T) {
 		input string
 		want  string
 	}{
-		{name: "integer", input: "2 + 3\n", want: ">>> 5\n>>> "},
-		{name: "string uses repr", input: `"hola"` + "\n", want: ">>> 'hola'\n>>> "},
-		{name: "variable", input: "x = 7\nx\n", want: ">>> >>> 7\n>>> "},
-		{name: "none is not echoed", input: "None\n", want: ">>> >>> "},
-		{name: "assignment is not echoed", input: "x = 1\n", want: ">>> >>> "},
-		{name: "print output is not repeated", input: "print(1)\n", want: ">>> 1\n>>> "},
-		{name: "function", input: "print\n", want: ">>> <built-in function print>\n>>> "},
+		{name: "integer", input: "2 + 3\n", want: ">>> 5\n>>> \n"},
+		{name: "string uses repr", input: `"hola"` + "\n", want: ">>> 'hola'\n>>> \n"},
+		{name: "variable", input: "x = 7\nx\n", want: ">>> >>> 7\n>>> \n"},
+		{name: "none is not echoed", input: "None\n", want: ">>> >>> \n"},
+		{name: "assignment is not echoed", input: "x = 1\n", want: ">>> >>> \n"},
+		{name: "print output is not repeated", input: "print(1)\n", want: ">>> 1\n>>> \n"},
+		{name: "function", input: "print\n", want: ">>> <built-in function print>\n>>> \n"},
 	}
 
 	for _, test := range tests {
@@ -63,42 +63,42 @@ func TestMultilineBlocks(t *testing.T) {
 		{
 			name:  "function definition",
 			input: "def double(x):\n    return x * 2\n\ndouble(4)\n",
-			want:  ">>> ... ... >>> 8\n>>> ",
+			want:  ">>> ... ... >>> 8\n>>> \n",
 		},
 		{
 			name:  "if with else",
 			input: "if 1 > 2:\n    print(\"a\")\nelse:\n    print(\"b\")\n\n",
-			want:  ">>> ... ... ... ... b\n>>> ",
+			want:  ">>> ... ... ... ... b\n>>> \n",
 		},
 		{
 			name:  "nested blocks",
 			input: "for i in range(3):\n    if i != 1:\n        print(i)\n\n",
-			want:  ">>> ... ... ... 0\n2\n>>> ",
+			want:  ">>> ... ... ... 0\n2\n>>> \n",
 		},
 		{
 			name:  "error reports the line inside the block",
 			input: "if True:\n    x = 1\n    print(missing)\n\n",
-			want:  ">>> ... ... ... " + `NameError at 3:11: name "missing" is not defined` + "\n>>> ",
+			want:  ">>> ... ... ... " + `NameError at 3:11: name "missing" is not defined` + "\n>>> \n",
 		},
 		{
 			name:  "end of input finishes the block",
 			input: "if True:\n    print(1)\n",
-			want:  ">>> ... ... 1\n>>> ",
+			want:  ">>> ... ... 1\n>>> \n",
 		},
 		{
 			name:  "colon inside a string",
 			input: `x = "a:"` + "\nx\n",
-			want:  ">>> >>> 'a:'\n>>> ",
+			want:  ">>> >>> 'a:'\n>>> \n",
 		},
 		{
 			name:  "colon inside a comment",
 			input: "x = 1 # note:\nx\n",
-			want:  ">>> >>> 1\n>>> ",
+			want:  ">>> >>> 1\n>>> \n",
 		},
 		{
 			name:  "block header with a comment",
 			input: "if True: # check\n    print(1)\n\n",
-			want:  ">>> ... ... 1\n>>> ",
+			want:  ">>> ... ... 1\n>>> \n",
 		},
 	}
 
@@ -111,10 +111,19 @@ func TestMultilineBlocks(t *testing.T) {
 	}
 }
 
+func TestEndOfInputPrintsNewline(t *testing.T) {
+	got := run("")
+
+	want := ">>> \n"
+	if got != want {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+}
+
 func TestEmptyLineIsIgnored(t *testing.T) {
 	got := run("\nprint(1)\n")
 
-	want := ">>> >>> 1\n>>> "
+	want := ">>> >>> 1\n>>> \n"
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
