@@ -148,6 +148,11 @@ func evaluateIntegerArithmetic(expression *ast.BinaryExpression, left, right int
 			return nil, divisionByZero(expression)
 		}
 		return object.Integer{Value: left / right}, nil
+	case lexer.DoubleSlash:
+		if right == 0 {
+			return nil, divisionByZero(expression)
+		}
+		return object.Integer{Value: floorDivide(left, right)}, nil
 	case lexer.Percent:
 		if right == 0 {
 			return nil, divisionByZero(expression)
@@ -171,6 +176,11 @@ func evaluateFloatArithmetic(expression *ast.BinaryExpression, left, right float
 			return nil, divisionByZero(expression)
 		}
 		return object.Float{Value: left / right}, nil
+	case lexer.DoubleSlash:
+		if right == 0 {
+			return nil, divisionByZero(expression)
+		}
+		return object.Float{Value: floorDivideFloat(left, right)}, nil
 	case lexer.Percent:
 		if right == 0 {
 			return nil, divisionByZero(expression)
@@ -225,4 +235,28 @@ func floorModuloFloat(dividend, divisor float64) float64 {
 		remainder += divisor
 	}
 	return remainder
+}
+
+func floorDivide(dividend, divisor int64) int64 {
+	quotient := dividend / divisor
+	if dividend%divisor != 0 && (dividend < 0) != (divisor < 0) {
+		quotient--
+	}
+	return quotient
+}
+
+func floorDivideFloat(dividend, divisor float64) float64 {
+	remainder := math.Mod(dividend, divisor)
+	quotient := (dividend - remainder) / divisor
+	if remainder != 0 && (remainder < 0) != (divisor < 0) {
+		quotient--
+	}
+	if quotient == 0 {
+		return math.Copysign(0, dividend/divisor)
+	}
+	floored := math.Floor(quotient)
+	if quotient-floored > 0.5 {
+		floored++
+	}
+	return floored
 }

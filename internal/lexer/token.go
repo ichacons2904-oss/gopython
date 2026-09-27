@@ -36,6 +36,7 @@ const (
 	Minus        TokenType = "MINUS"
 	Asterisk     TokenType = "ASTERISK"
 	Slash        TokenType = "SLASH"
+	DoubleSlash  TokenType = "DOUBLE_SLASH"
 	Percent      TokenType = "PERCENT"
 	Equal        TokenType = "EQUAL"
 	NotEqual     TokenType = "NOT_EQUAL"
@@ -81,6 +82,7 @@ var twoCharacterTokens = map[string]TokenType{
 	"!=": NotEqual,
 	"<=": LessEqual,
 	">=": GreaterEqual,
+	"//": DoubleSlash,
 }
 
 var oneCharacterTokens = map[rune]TokenType{

@@ -96,7 +96,7 @@ func TestLexSupportsStringsAndEscapes(t *testing.T) {
 }
 
 func TestLexRecognizesKeywordsAndOperators(t *testing.T) {
-	source := "if else elif while for in def return break continue and or not True False None = + - * / % == != < <= > >= : ( ) ,\n"
+	source := "if else elif while for in def return break continue and or not True False None = + - * / // % == != < <= > >= : ( ) ,\n"
 	tokens, err := New(source).Lex()
 	if err != nil {
 		t.Fatalf("Lex() returned error: %v", err)
@@ -105,7 +105,7 @@ func TestLexRecognizesKeywordsAndOperators(t *testing.T) {
 	want := []TokenType{
 		If, Else, Elif, While, For, In, Def, Return, Break, Continue,
 		And, Or, Not, True, False, None,
-		Assign, Plus, Minus, Asterisk, Slash, Percent,
+		Assign, Plus, Minus, Asterisk, Slash, DoubleSlash, Percent,
 		Equal, NotEqual, LessThan, LessEqual, GreaterThan, GreaterEqual,
 		Colon, LeftParenthesis, RightParenthesis, Comma, Newline, EOF,
 	}

@@ -111,7 +111,7 @@ func (parser *Parser) parseMultiplicative() (ast.Expression, error) {
 		return nil, err
 	}
 
-	for parser.check(lexer.Asterisk) || parser.check(lexer.Slash) || parser.check(lexer.Percent) {
+	for parser.check(lexer.Asterisk) || parser.check(lexer.Slash) || parser.check(lexer.DoubleSlash) || parser.check(lexer.Percent) {
 		operator := parser.advance()
 		right, err := parser.parseUnary()
 		if err != nil {
