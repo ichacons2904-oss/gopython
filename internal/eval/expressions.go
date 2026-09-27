@@ -144,7 +144,7 @@ func evaluateBinary(expression *ast.BinaryExpression, environment *object.Enviro
 				Position: expression.Position(),
 			}
 		}
-		return object.Integer{Value: leftInteger.Value % rightInteger.Value}, nil
+		return object.Integer{Value: floorModulo(leftInteger.Value, rightInteger.Value)}, nil
 	default:
 		return nil, Error{
 			Kind:     RuntimeError,
@@ -152,4 +152,12 @@ func evaluateBinary(expression *ast.BinaryExpression, environment *object.Enviro
 			Position: expression.Position(),
 		}
 	}
+}
+
+func floorModulo(dividend, divisor int64) int64 {
+	remainder := dividend % divisor
+	if remainder != 0 && (remainder < 0) != (divisor < 0) {
+		remainder += divisor
+	}
+	return remainder
 }

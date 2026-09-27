@@ -34,6 +34,31 @@ func TestEvaluateArithmeticAndAssignment(t *testing.T) {
 	}
 }
 
+func TestEvaluateNumericOperators(t *testing.T) {
+	tests := []struct {
+		source string
+		want   object.Value
+	}{
+		{source: "7 % 3", want: object.Integer{Value: 1}},
+		{source: "-7 % 3", want: object.Integer{Value: 2}},
+		{source: "7 % -3", want: object.Integer{Value: -2}},
+		{source: "-7 % -3", want: object.Integer{Value: -1}},
+		{source: "6 % -3", want: object.Integer{Value: 0}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.source, func(t *testing.T) {
+			result, err := EvaluateProgram(parseProgram(t, test.source+"\n"), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result != test.want {
+				t.Fatalf("result = %#v, want %#v", result, test.want)
+			}
+		})
+	}
+}
+
 func TestEvaluateUnaryAndStringConcatenation(t *testing.T) {
 	program := parseProgram(t, "x = -7\ny = \"hello\" + \" world\"\ny\n")
 
