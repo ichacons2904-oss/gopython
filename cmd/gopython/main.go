@@ -10,19 +10,20 @@ import (
 	"gopython/internal/lexer"
 	"gopython/internal/object"
 	"gopython/internal/parser"
+	"gopython/internal/repl"
 )
 
 func main() {
-	filename := "examples/functions.py"
 	if len(os.Args) > 2 {
 		fmt.Fprintln(os.Stderr, "usage: gopython [file.py]")
 		os.Exit(2)
 	}
-	if len(os.Args) == 2 {
-		filename = os.Args[1]
+	if len(os.Args) == 1 {
+		repl.Start(os.Stdin, os.Stdout)
+		return
 	}
 
-	if err := runFile(filename, os.Stdout); err != nil {
+	if err := runFile(os.Args[1], os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

@@ -26,7 +26,8 @@ source → lexer → parser/AST → evaluator/runtime → output
 
 ```bash
 go test ./...
-go run ./cmd/gopython
+go run ./cmd/gopython examples/functions.py   
+go run ./cmd/gopython                         # ejecuta el REPL
 ```
 
 ## Docker
@@ -40,4 +41,10 @@ To run another source file from the host:
 
 ```bash
 docker run --rm -v "$PWD:/workspace" gopython /workspace/path/to/program.py
+```
+
+To start the REPL inside the container:
+
+```bash
+docker run --rm -it --entrypoint /gopython gopython
 ```
