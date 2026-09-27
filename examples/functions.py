@@ -3,4 +3,4 @@ def fun(value):
         print(i)
     return value
 
-print(fun(10*2 / 2))
+print(fun(10*2 // 2))

@@ -147,7 +147,7 @@ func evaluateIntegerArithmetic(expression *ast.BinaryExpression, left, right int
 		if right == 0 {
 			return nil, divisionByZero(expression)
 		}
-		return object.Integer{Value: left / right}, nil
+		return object.Float{Value: float64(left) / float64(right)}, nil
 	case lexer.DoubleSlash:
 		if right == 0 {
 			return nil, divisionByZero(expression)
