@@ -101,6 +101,7 @@ docker run --rm gopython
 Para ejecutar otro archivo del host:
 
 ```bash
+docker build -t gopython .
 docker run --rm -v "$PWD:/workspace" gopython /workspace/path/to/program.py
 ```
 

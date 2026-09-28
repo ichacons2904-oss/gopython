@@ -7,7 +7,6 @@
 .DS_Store
 .idea/
 .vscode/
-AGENTS.md
 
 # Coverage and profiling output
 coverage.out
