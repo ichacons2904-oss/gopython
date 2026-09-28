@@ -16,10 +16,10 @@ gopython = os.path.join(rootdir, "bin", "gopython")
 
 CANDIDATES = {
     "gopython": [gopython],
+    "gpython": ["gpython", os.path.expanduser("~/go/bin/gpython")],
+    "rustpython": ["rustpython"],
     "cpython": ["python3"],
     "pypy": ["pypy3"],
-    "rustpython": ["rustpython"],
-    "gpython": ["gpython", os.path.expanduser("~/go/bin/gpython")],
 }
 
 
@@ -98,21 +98,24 @@ def main():
     os.makedirs(resultsdir, exist_ok=True)
     with open(os.path.join(resultsdir, "comparison.md"), "w") as report:
         report.write("# Benchmarks\n\n")
-        report.write(f"{date.today()} · {platform.machine()} {platform.system()} · hyperfine, 10 corridas. Media en ms; entre paréntesis, relativo a CPython.\n\n")
+        report.write(f"{date.today()} · {platform.machine()} {platform.system()} · hyperfine, 10 corridas. Tiempo medio de gopython; para el resto, cuántas veces ese tiempo (menos es más rápido).\n\n")
         report.write("| Intérprete | Versión |\n| --- | --- |\n")
         for name, interpreter in interpreters.items():
             report.write(f"| {name} | {version(name, interpreter)} |\n")
         report.write("\n| Programa | " + " | ".join(interpreters) + " |\n")
         report.write("| --- |" + " --- |" * len(interpreters) + "\n")
         for program, results in table.items():
-            baseline = results["cpython"][0]
+            baseline = results["gopython"][0]
             cells = []
             for name in interpreters:
                 if name not in results:
                     cells.append("—")
                     continue
                 mean, _ = results[name]
-                cells.append(f"{mean * 1000:.0f} ({mean / baseline:.2f}x)")
+                if name == "gopython":
+                    cells.append(f"{mean * 1000:.0f} ms")
+                else:
+                    cells.append(f"{mean / baseline:.2f}x")
             report.write(f"| `{program}` | " + " | ".join(cells) + " |\n")
     print(f"written {os.path.join(resultsdir, 'comparison.md')}")
 
