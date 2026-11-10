@@ -45,6 +45,21 @@ func evaluateComparison(expression *ast.ComparisonExpression, environment *objec
 
 func compareValues(left, right object.Value, operator lexer.TokenType, position source.Position) (bool, error) {
 	switch operator {
+	case lexer.In:
+		list, ok := right.(*object.List)
+		if !ok {
+			return false, Error{
+				Kind:     TypeError,
+				Message:  fmt.Sprintf("argument of type %s is not iterable", right.Type()),
+				Position: position,
+			}
+		}
+		for _, element := range list.Elements {
+			if valuesEqual(left, element) {
+				return true, nil
+			}
+		}
+		return false, nil
 	case lexer.Equal:
 		return valuesEqual(left, right), nil
 	case lexer.NotEqual:
@@ -82,6 +97,15 @@ func compareValues(left, right object.Value, operator lexer.TokenType, position 
 }
 
 func valuesEqual(left, right object.Value) bool {
+	return valuesEqualSeen(left, right, make(map[listPair]bool))
+}
+
+type listPair struct {
+	left  *object.List
+	right *object.List
+}
+
+func valuesEqualSeen(left, right object.Value, seen map[listPair]bool) bool {
 	switch left := left.(type) {
 	case object.Integer:
 		if right, ok := right.(object.Integer); ok {
@@ -101,6 +125,22 @@ func valuesEqual(left, right object.Value) bool {
 	case object.None:
 		_, ok := right.(object.None)
 		return ok
+	case *object.List:
+		right, ok := right.(*object.List)
+		if !ok || len(left.Elements) != len(right.Elements) {
+			return false
+		}
+		pair := listPair{left: left, right: right}
+		if seen[pair] {
+			return true
+		}
+		seen[pair] = true
+		for index := range left.Elements {
+			if !valuesEqualSeen(left.Elements[index], right.Elements[index], seen) {
+				return false
+			}
+		}
+		return true
 	default:
 		return false
 	}

@@ -169,6 +169,12 @@ func (parser *Parser) parsePrimary() (ast.Expression, error) {
 	case lexer.Identifier:
 		parser.advance()
 		expression = &ast.Identifier{Pos: positionOf(token), Name: token.Lexeme}
+	case lexer.LeftBracket:
+		var err error
+		expression, err = parser.parseListLiteral()
+		if err != nil {
+			return nil, err
+		}
 	case lexer.LeftParenthesis:
 		parser.advance()
 		var err error
@@ -183,14 +189,54 @@ func (parser *Parser) parsePrimary() (ast.Expression, error) {
 		return nil, expressionError(token)
 	}
 
-	for parser.check(lexer.LeftParenthesis) {
-		var err error
-		expression, err = parser.parseCall(expression)
+	for {
+		switch parser.current().Type {
+		case lexer.LeftParenthesis:
+			var err error
+			expression, err = parser.parseCall(expression)
+			if err != nil {
+				return nil, err
+			}
+		case lexer.LeftBracket:
+			open := parser.advance()
+			index, err := parser.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			if _, err := parser.expect(lexer.RightBracket); err != nil {
+				return nil, err
+			}
+			expression = &ast.IndexExpression{Pos: positionOf(open), Collection: expression, Index: index}
+		case lexer.Dot:
+			dot := parser.advance()
+			name, err := parser.expect(lexer.Identifier)
+			if err != nil {
+				return nil, err
+			}
+			expression = &ast.AttributeExpression{Pos: positionOf(dot), Object: expression, Name: name.Lexeme}
+		default:
+			return expression, nil
+		}
+	}
+}
+
+func (parser *Parser) parseListLiteral() (ast.Expression, error) {
+	open := parser.advance()
+	elements := []ast.Expression{}
+	for !parser.check(lexer.RightBracket) {
+		element, err := parser.parseExpression()
 		if err != nil {
 			return nil, err
 		}
+		elements = append(elements, element)
+		if !parser.match(lexer.Comma) {
+			break
+		}
 	}
-	return expression, nil
+	if _, err := parser.expect(lexer.RightBracket); err != nil {
+		return nil, err
+	}
+	return &ast.ListLiteral{Pos: positionOf(open), Elements: elements}, nil
 }
 
 func (parser *Parser) parseCall(callee ast.Expression) (ast.Expression, error) {
@@ -217,7 +263,7 @@ func (parser *Parser) parseCall(callee ast.Expression) (ast.Expression, error) {
 
 func isComparisonOperator(tokenType lexer.TokenType) bool {
 	switch tokenType {
-	case lexer.Equal, lexer.NotEqual, lexer.LessThan, lexer.LessEqual, lexer.GreaterThan, lexer.GreaterEqual:
+	case lexer.In, lexer.Equal, lexer.NotEqual, lexer.LessThan, lexer.LessEqual, lexer.GreaterThan, lexer.GreaterEqual:
 		return true
 	default:
 		return false

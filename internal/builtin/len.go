@@ -17,6 +17,8 @@ func lenFunction(arguments []object.Value) (object.Value, error) {
 		return object.Integer{Value: int64(utf8.RuneCountInString(argument.Value))}, nil
 	case object.Range:
 		return object.Integer{Value: argument.Len()}, nil
+	case *object.List:
+		return object.Integer{Value: int64(len(argument.Elements))}, nil
 	default:
 		return nil, fmt.Errorf("%s object has no len()", argument.Type())
 	}

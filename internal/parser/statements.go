@@ -64,10 +64,23 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 	if parser.check(lexer.Identifier) && parser.peek().Type == lexer.Assign {
 		return parser.parseAssignment()
 	}
-
 	expression, err := parser.parseExpression()
 	if err != nil {
 		return nil, err
+	}
+	if parser.match(lexer.Assign) {
+		target, ok := expression.(*ast.IndexExpression)
+		if !ok {
+			return nil, Error{Token: parser.current(), Message: "invalid assignment target"}
+		}
+		value, err := parser.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		if _, err := parser.expect(lexer.Newline); err != nil {
+			return nil, err
+		}
+		return &ast.IndexAssignment{Pos: target.Position(), Target: target, Value: value}, nil
 	}
 	if _, err := parser.expect(lexer.Newline); err != nil {
 		return nil, err

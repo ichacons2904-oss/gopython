@@ -26,6 +26,8 @@ func evaluateCall(expression *ast.CallExpression, environment *object.Environmen
 	switch callable := callee.(type) {
 	case object.Builtin:
 		return invokeBuiltin(callable, arguments, expression.Position())
+	case object.BoundMethod:
+		return invokeBoundMethod(callable, arguments, expression.Position())
 	case object.Function:
 		return invokeFunction(callable, arguments, expression.Position())
 	default:

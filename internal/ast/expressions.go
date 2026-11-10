@@ -124,3 +124,29 @@ func (node CallExpression) Position() source.Position {
 }
 
 func (*CallExpression) expressionNode() {}
+
+type ListLiteral struct {
+	Pos      source.Position
+	Elements []Expression
+}
+
+func (node ListLiteral) Position() source.Position { return node.Pos }
+func (*ListLiteral) expressionNode()               {}
+
+type IndexExpression struct {
+	Pos        source.Position
+	Collection Expression
+	Index      Expression
+}
+
+func (node IndexExpression) Position() source.Position { return node.Pos }
+func (*IndexExpression) expressionNode()               {}
+
+type AttributeExpression struct {
+	Pos    source.Position
+	Object Expression
+	Name   string
+}
+
+func (node AttributeExpression) Position() source.Position { return node.Pos }
+func (*AttributeExpression) expressionNode()               {}

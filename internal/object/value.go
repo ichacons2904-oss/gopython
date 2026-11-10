@@ -17,6 +17,8 @@ const (
 	BuiltinType  Type = "BUILTIN"
 	FunctionType Type = "FUNCTION"
 	RangeType    Type = "RANGE"
+	ListType     Type = "LIST"
+	MethodType   Type = "METHOD"
 )
 
 type Value interface {
@@ -116,4 +118,15 @@ func (Builtin) Type() Type {
 
 func (value Builtin) Display() string {
 	return "<built-in function " + value.Name + ">"
+}
+
+type BoundMethod struct {
+	Receiver Value
+	Name     string
+}
+
+func (BoundMethod) Type() Type { return MethodType }
+
+func (method BoundMethod) Display() string {
+	return "<built-in method '" + method.Name + "' of " + string(method.Receiver.Type()) + " object>"
 }

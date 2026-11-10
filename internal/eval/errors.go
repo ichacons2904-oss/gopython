@@ -14,6 +14,9 @@ const (
 	ZeroDivisionError ErrorKind = "ZeroDivisionError"
 	RuntimeError      ErrorKind = "RuntimeError"
 	SyntaxError       ErrorKind = "SyntaxError"
+	IndexError        ErrorKind = "IndexError"
+	MemoryError       ErrorKind = "MemoryError"
+	AttributeError    ErrorKind = "AttributeError"
 )
 
 type Error struct {
