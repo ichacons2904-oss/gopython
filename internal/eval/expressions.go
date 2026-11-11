@@ -67,24 +67,14 @@ func evaluateAttribute(expression *ast.AttributeExpression, environment *object.
 	if err != nil {
 		return nil, err
 	}
-	list, ok := receiver.(*object.List)
-	if !ok || !isListMethod(expression.Name) {
+	if _, ok := lookupBuiltinMethod(receiver, expression.Name); !ok {
 		return nil, Error{
 			Kind:     AttributeError,
 			Message:  fmt.Sprintf("%s object has no attribute %q", receiver.Type(), expression.Name),
 			Position: expression.Position(),
 		}
 	}
-	return object.BoundMethod{Receiver: list, Name: expression.Name}, nil
-}
-
-func isListMethod(name string) bool {
-	switch name {
-	case "extend", "append", "pop", "clear", "copy":
-		return true
-	default:
-		return false
-	}
+	return object.BoundMethod{Receiver: receiver, Name: expression.Name}, nil
 }
 
 func evaluateListIndex(expression *ast.IndexExpression, environment *object.Environment) (*object.List, int64, error) {
