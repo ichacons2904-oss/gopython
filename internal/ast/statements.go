@@ -14,6 +14,15 @@ func (node Assignment) Position() source.Position {
 
 func (*Assignment) statementNode() {}
 
+type IndexAssignment struct {
+	Pos    source.Position
+	Target *IndexExpression
+	Value  Expression
+}
+
+func (node IndexAssignment) Position() source.Position { return node.Pos }
+func (*IndexAssignment) statementNode()                {}
+
 type ExpressionStatement struct {
 	Expression Expression
 }

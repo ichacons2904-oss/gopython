@@ -4,9 +4,9 @@ Un intérprete de un subconjunto de Python, escrito en Go. Lee el código, lo to
 
 ## Qué soporta
 
-Enteros, floats, strings, booleanos y `None`; variables; aritmética con las reglas de Python (`/` da float, `//` y `%` redondean hacia abajo); comparaciones encadenadas; `and`, `or`, `not`; `if`/`elif`/`else`, `while`, `for` sobre `range`, `break`, `continue`; funciones con recursión y closures, `nonlocal`, `global`, `pass`; `print`, `range` y `len`. Los errores indican línea y columna.
+Enteros, floats, strings, booleanos, `None` y listas mutables; variables; aritmética con las reglas de Python (`/` da float, `//` y `%` redondean hacia abajo); comparaciones encadenadas; `and`, `or`, `not`; `if`/`elif`/`else`, `while`, `for` sobre `range` o listas, `break`, `continue`; funciones con recursión y closures, `nonlocal`, `global`, `pass`; `print`, `range` y `len`. Las listas admiten literales, indexación entera (también negativa), asignación a índices existentes, igualdad estructural, concatenación (`+`), repetición (`*`), pertenencia (`in`), y los métodos `extend`, `append`, `pop`, `clear` y `copy`. No se soportan slices ni comprehensions. Los errores indican línea y columna.
 
-No hay listas, diccionarios, clases ni excepciones por el momento. Apuntamos tenerlos para la entrega final. 
+No hay diccionarios, clases ni excepciones por el momento. Apuntamos tenerlos para la entrega final.
 
 ## Cómo probarlo
 

@@ -3,6 +3,9 @@ package object
 import "strings"
 
 func Repr(value Value) string {
+	if list, ok := value.(*List); ok {
+		return formatList(list, make(map[*List]bool))
+	}
 	if value, ok := value.(String); ok {
 		return quote(value.Value)
 	}

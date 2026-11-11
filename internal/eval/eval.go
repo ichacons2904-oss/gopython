@@ -32,6 +32,8 @@ func evaluateStatement(statement ast.Statement, environment *object.Environment)
 		return completion{value: value}, err
 	case *ast.Assignment:
 		return evaluateAssignment(statement, environment)
+	case *ast.IndexAssignment:
+		return evaluateIndexAssignment(statement, environment)
 	case *ast.FunctionDefinition:
 		return evaluateFunctionDefinition(statement, environment)
 	case *ast.IfStatement:
@@ -83,5 +85,20 @@ func evaluateAssignment(statement *ast.Assignment, environment *object.Environme
 	}
 
 	environment.Set(statement.Name.Name, value)
+	return completion{value: object.None{}}, nil
+}
+
+func evaluateIndexAssignment(statement *ast.IndexAssignment, environment *object.Environment) (completion, error) {
+	value, err := evaluateExpression(statement.Value, environment)
+	if err != nil {
+		return completion{}, err
+	}
+	list, index, err := evaluateListIndex(statement.Target, environment)
+	if err != nil {
+		return completion{}, err
+	}
+	if !list.Set(index, value) {
+		return completion{}, Error{Kind: IndexError, Message: "list assignment index out of range", Position: statement.Target.Position()}
+	}
 	return completion{value: object.None{}}, nil
 }

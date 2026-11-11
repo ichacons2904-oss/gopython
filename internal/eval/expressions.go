@@ -21,6 +21,28 @@ func evaluateExpression(expression ast.Expression, environment *object.Environme
 		return object.Boolean{Value: expression.Value}, nil
 	case *ast.NoneLiteral:
 		return object.None{}, nil
+	case *ast.ListLiteral:
+		elements := make([]object.Value, len(expression.Elements))
+		for index, element := range expression.Elements {
+			value, err := evaluateExpression(element, environment)
+			if err != nil {
+				return nil, err
+			}
+			elements[index] = value
+		}
+		return object.NewList(elements), nil
+	case *ast.IndexExpression:
+		list, index, err := evaluateListIndex(expression, environment)
+		if err != nil {
+			return nil, err
+		}
+		value, ok := list.At(index)
+		if !ok {
+			return nil, Error{Kind: IndexError, Message: "list index out of range", Position: expression.Position()}
+		}
+		return value, nil
+	case *ast.AttributeExpression:
+		return evaluateAttribute(expression, environment)
 	case *ast.Identifier:
 		return evaluateIdentifier(expression, environment)
 	case *ast.UnaryExpression:
@@ -38,6 +60,41 @@ func evaluateExpression(expression ast.Expression, environment *object.Environme
 			Position: expression.Position(),
 		}
 	}
+}
+
+func evaluateAttribute(expression *ast.AttributeExpression, environment *object.Environment) (object.Value, error) {
+	receiver, err := evaluateExpression(expression.Object, environment)
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := lookupBuiltinMethod(receiver, expression.Name); !ok {
+		return nil, Error{
+			Kind:     AttributeError,
+			Message:  fmt.Sprintf("%s object has no attribute %q", receiver.Type(), expression.Name),
+			Position: expression.Position(),
+		}
+	}
+	return object.BoundMethod{Receiver: receiver, Name: expression.Name}, nil
+}
+
+func evaluateListIndex(expression *ast.IndexExpression, environment *object.Environment) (*object.List, int64, error) {
+	collection, err := evaluateExpression(expression.Collection, environment)
+	if err != nil {
+		return nil, 0, err
+	}
+	indexValue, err := evaluateExpression(expression.Index, environment)
+	if err != nil {
+		return nil, 0, err
+	}
+	list, ok := collection.(*object.List)
+	if !ok {
+		return nil, 0, Error{Kind: TypeError, Message: fmt.Sprintf("%s object is not subscriptable", collection.Type()), Position: expression.Position()}
+	}
+	index, ok := indexValue.(object.Integer)
+	if !ok {
+		return nil, 0, Error{Kind: TypeError, Message: fmt.Sprintf("list indices must be integers, not %s", indexValue.Type()), Position: expression.Index.Position()}
+	}
+	return list, index.Value, nil
 }
 
 func evaluateIdentifier(expression *ast.Identifier, environment *object.Environment) (object.Value, error) {
@@ -105,10 +162,33 @@ func evaluateBinary(expression *ast.BinaryExpression, environment *object.Enviro
 	}
 
 	if expression.Operator == lexer.Plus {
+		leftList, leftIsList := left.(*object.List)
+		rightList, rightIsList := right.(*object.List)
+		if leftIsList && rightIsList {
+			maxInt := int(^uint(0) >> 1)
+			if len(leftList.Elements) > maxInt-len(rightList.Elements) {
+				return nil, Error{Kind: MemoryError, Message: "list concatenation result is too large", Position: expression.Position()}
+			}
+			elements := make([]object.Value, 0, len(leftList.Elements)+len(rightList.Elements))
+			elements = append(elements, leftList.Elements...)
+			elements = append(elements, rightList.Elements...)
+			return object.NewList(elements), nil
+		}
+		if leftIsList || rightIsList {
+			return nil, Error{Kind: TypeError, Message: fmt.Sprintf("operator PLUS requires two lists, got %s and %s", left.Type(), right.Type()), Position: expression.Position()}
+		}
 		if leftString, ok := left.(object.String); ok {
 			if rightString, ok := right.(object.String); ok {
 				return object.String{Value: leftString.Value + rightString.Value}, nil
 			}
+		}
+	}
+	if expression.Operator == lexer.Asterisk {
+		if list, ok := left.(*object.List); ok {
+			return repeatList(expression, list, right)
+		}
+		if list, ok := right.(*object.List); ok {
+			return repeatList(expression, list, left)
 		}
 	}
 
@@ -133,6 +213,29 @@ func evaluateBinary(expression *ast.BinaryExpression, environment *object.Enviro
 		}
 	}
 	return evaluateFloatArithmetic(expression, leftNumber, rightNumber)
+}
+
+func repeatList(expression *ast.BinaryExpression, list *object.List, countValue object.Value) (object.Value, error) {
+	count, ok := countValue.(object.Integer)
+	if !ok {
+		return nil, Error{
+			Kind:     TypeError,
+			Message:  fmt.Sprintf("can't multiply list by %s", countValue.Type()),
+			Position: expression.Position(),
+		}
+	}
+	if count.Value <= 0 || len(list.Elements) == 0 {
+		return object.NewList([]object.Value{}), nil
+	}
+	maxInt := int64(int(^uint(0) >> 1))
+	if int64(len(list.Elements)) > maxInt/count.Value {
+		return nil, Error{Kind: MemoryError, Message: "list repetition result is too large", Position: expression.Position()}
+	}
+	repeated := make([]object.Value, 0, int64(len(list.Elements))*count.Value)
+	for i := int64(0); i < count.Value; i++ {
+		repeated = append(repeated, list.Elements...)
+	}
+	return object.NewList(repeated), nil
 }
 
 func evaluateIntegerArithmetic(expression *ast.BinaryExpression, left, right int64) (object.Value, error) {
