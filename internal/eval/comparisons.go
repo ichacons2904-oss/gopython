@@ -46,20 +46,11 @@ func evaluateComparison(expression *ast.ComparisonExpression, environment *objec
 func compareValues(left, right object.Value, operator lexer.TokenType, position source.Position) (bool, error) {
 	switch operator {
 	case lexer.In, lexer.NotIn:
-		list, ok := right.(*object.List)
-		if !ok {
-			return false, Error{
-				Kind:     TypeError,
-				Message:  fmt.Sprintf("argument of type %s is not iterable", right.Type()),
-				Position: position,
-			}
+		found, err := contains(right, left, position)
+		if err != nil {
+			return false, err
 		}
-		for _, element := range list.Elements {
-			if valuesEqual(left, element) {
-				return operator == lexer.In, nil
-			}
-		}
-		return operator == lexer.NotIn, nil
+		return found == (operator == lexer.In), nil
 	case lexer.Equal:
 		return valuesEqual(left, right), nil
 	case lexer.NotEqual:
@@ -96,16 +87,40 @@ func compareValues(left, right object.Value, operator lexer.TokenType, position 
 	}
 }
 
+func contains(container, element object.Value, position source.Position) (bool, error) {
+	switch container := container.(type) {
+	case *object.List:
+		for _, candidate := range container.Elements {
+			if valuesEqual(element, candidate) {
+				return true, nil
+			}
+		}
+		return false, nil
+	case *object.Dict:
+		if !object.Hashable(element) {
+			return false, unhashableError(element, position)
+		}
+		_, found := container.Get(element)
+		return found, nil
+	default:
+		return false, Error{
+			Kind:     TypeError,
+			Message:  fmt.Sprintf("argument of type %s is not iterable", container.Type()),
+			Position: position,
+		}
+	}
+}
+
 func valuesEqual(left, right object.Value) bool {
-	return valuesEqualSeen(left, right, make(map[listPair]bool))
+	return valuesEqualSeen(left, right, make(map[containerPair]bool))
 }
 
-type listPair struct {
-	left  *object.List
-	right *object.List
+type containerPair struct {
+	left  object.Value
+	right object.Value
 }
 
-func valuesEqualSeen(left, right object.Value, seen map[listPair]bool) bool {
+func valuesEqualSeen(left, right object.Value, seen map[containerPair]bool) bool {
 	switch left := left.(type) {
 	case object.Integer:
 		if right, ok := right.(object.Integer); ok {
@@ -130,13 +145,30 @@ func valuesEqualSeen(left, right object.Value, seen map[listPair]bool) bool {
 		if !ok || len(left.Elements) != len(right.Elements) {
 			return false
 		}
-		pair := listPair{left: left, right: right}
+		pair := containerPair{left: left, right: right}
 		if seen[pair] {
 			return true
 		}
 		seen[pair] = true
 		for index := range left.Elements {
 			if !valuesEqualSeen(left.Elements[index], right.Elements[index], seen) {
+				return false
+			}
+		}
+		return true
+	case *object.Dict:
+		right, ok := right.(*object.Dict)
+		if !ok || left.Len() != right.Len() {
+			return false
+		}
+		pair := containerPair{left: left, right: right}
+		if seen[pair] {
+			return true
+		}
+		seen[pair] = true
+		for _, entry := range left.Entries() {
+			value, ok := right.Get(entry.Key)
+			if !ok || !valuesEqualSeen(entry.Value, value, seen) {
 				return false
 			}
 		}

@@ -20,6 +20,8 @@ func isTruthy(value object.Value) bool {
 		return false
 	case *object.List:
 		return len(value.Elements) != 0
+	case *object.Dict:
+		return value.Len() != 0
 	default:
 		return true
 	}

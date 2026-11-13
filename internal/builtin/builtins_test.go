@@ -71,6 +71,8 @@ func TestLenBuiltin(t *testing.T) {
 		{argument: object.Range{Start: 1, Stop: 10, Step: 3}, want: 3},
 		{argument: object.Range{Start: 5, Stop: 0, Step: -2}, want: 3},
 		{argument: object.Range{Start: 5, Stop: 0, Step: 1}, want: 0},
+		{argument: object.NewDict(), want: 0},
+		{argument: dictOf(object.String{Value: "a"}, object.String{Value: "b"}), want: 2},
 	}
 
 	for _, test := range tests {
@@ -86,4 +88,12 @@ func TestLenBuiltin(t *testing.T) {
 	if _, err := lenFunction([]object.Value{object.Integer{Value: 1}}); err == nil {
 		t.Fatal("len(1) returned nil error")
 	}
+}
+
+func dictOf(keys ...object.Value) *object.Dict {
+	dict := object.NewDict()
+	for _, key := range keys {
+		dict.Set(key, object.None{})
+	}
+	return dict
 }

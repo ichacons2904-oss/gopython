@@ -73,3 +73,52 @@ func TestEvaluateDictErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestEvaluateDictOperators(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   object.Value
+	}{
+		{name: "in checks keys", source: "'a' in {'a': 1}\n", want: object.Boolean{Value: true}},
+		{name: "in ignores values", source: "1 in {'a': 1}\n", want: object.Boolean{Value: false}},
+		{name: "not in", source: "'b' not in {'a': 1}\n", want: object.Boolean{Value: true}},
+		{name: "in with numeric promotion", source: "1.0 in {1: 'x'}\n", want: object.Boolean{Value: true}},
+		{name: "equality ignores order", source: "{'a': 1, 'b': 2} == {'b': 2, 'a': 1}\n", want: object.Boolean{Value: true}},
+		{name: "equality compares values", source: "{'a': 1} == {'a': 2}\n", want: object.Boolean{Value: false}},
+		{name: "nested equality", source: "{'a': [1, {'b': 2}]} == {'a': [1.0, {'b': 2}]}\n", want: object.Boolean{Value: true}},
+		{name: "dict is not a list", source: "{} != []\n", want: object.Boolean{Value: true}},
+		{name: "self-referential equality", source: "items = {}\nitems['self'] = items\nitems == items\n", want: object.Boolean{Value: true}},
+		{name: "empty dict is falsy", source: "not {}\n", want: object.Boolean{Value: true}},
+		{name: "non-empty dict is truthy", source: "result = 0\nif {0: 0}:\n    result = 1\nresult\n", want: object.Integer{Value: 1}},
+		{name: "len", source: "len({'a': 1, 'b': 2, 'a': 3})\n", want: object.Integer{Value: 2}},
+		{name: "for iterates keys in insertion order", source: "text = ''\nfor key in {'b': 1, 'a': 2, 'c': 3}:\n    text = text + key\ntext\n", want: object.String{Value: "bac"}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if result := evaluateDictSource(t, test.source); !valuesEqual(result, test.want) {
+				t.Fatalf("result = %#v, want %#v", result, test.want)
+			}
+		})
+	}
+}
+
+func TestEvaluateDictOperatorErrors(t *testing.T) {
+	tests := []struct {
+		source string
+		kind   ErrorKind
+	}{
+		{source: "[1] in {}\n", kind: TypeError},
+		{source: "{} < {}\n", kind: TypeError},
+		{source: "{} + {}\n", kind: TypeError},
+	}
+	for _, test := range tests {
+		t.Run(test.source, func(t *testing.T) {
+			_, err := EvaluateProgram(parseProgram(t, test.source), nil)
+			evaluationError, ok := err.(Error)
+			if !ok || evaluationError.Kind != test.kind {
+				t.Fatalf("error = %#v, want %s", err, test.kind)
+			}
+		})
+	}
+}
