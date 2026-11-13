@@ -122,3 +122,56 @@ func TestEvaluateDictOperatorErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestEvaluateDictMethods(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   object.Value
+	}{
+		{name: "get existing key", source: "{'a': 1}.get('a')\n", want: object.Integer{Value: 1}},
+		{name: "get missing key", source: "{'a': 1}.get('b')\n", want: object.None{}},
+		{name: "get with default", source: "{'a': 1}.get('b', 0)\n", want: object.Integer{Value: 0}},
+		{name: "keys in insertion order", source: "{'b': 1, 'a': 2}.keys()\n", want: object.NewList([]object.Value{object.String{Value: "b"}, object.String{Value: "a"}})},
+		{name: "values in insertion order", source: "{'b': 1, 'a': 2}.values()\n", want: object.NewList([]object.Value{object.Integer{Value: 1}, object.Integer{Value: 2}})},
+		{name: "pop returns the value", source: "items = {'a': 1, 'b': 2}\nitems.pop('a') + len(items)\n", want: object.Integer{Value: 2}},
+		{name: "pop with default", source: "{}.pop('a', 7)\n", want: object.Integer{Value: 7}},
+		{name: "pop then reinsert moves key to the end", source: "items = {'a': 1, 'b': 2}\nitems['a'] = items.pop('a')\nitems.keys()\n", want: object.NewList([]object.Value{object.String{Value: "b"}, object.String{Value: "a"}})},
+		{name: "update merges and overwrites", source: "items = {'a': 1}\nitems.update({'a': 3, 'b': 2})\nitems == {'a': 3, 'b': 2}\n", want: object.Boolean{Value: true}},
+		{name: "update returns None", source: "{}.update({})\n", want: object.None{}},
+		{name: "clear empties the dict", source: "items = {'a': 1}\nalias = items\nitems.clear()\nlen(alias)\n", want: object.Integer{Value: 0}},
+		{name: "copy is shallow and independent", source: "inner = [1]\nitems = {'a': inner}\ncopied = items.copy()\ncopied['b'] = 2\ninner.append(2)\n[len(items), copied['a']]\n", want: object.NewList([]object.Value{object.Integer{Value: 1}, object.NewList([]object.Value{object.Integer{Value: 1}, object.Integer{Value: 2}})})},
+		{name: "keys returns a new list", source: "items = {'a': 1}\nkeys = items.keys()\nitems['b'] = 2\nlen(keys)\n", want: object.Integer{Value: 1}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if result := evaluateDictSource(t, test.source); !valuesEqual(result, test.want) {
+				t.Fatalf("result = %s, want %s", object.Repr(result), object.Repr(test.want))
+			}
+		})
+	}
+}
+
+func TestEvaluateDictMethodErrors(t *testing.T) {
+	tests := []struct {
+		source string
+		kind   ErrorKind
+	}{
+		{source: "{}.pop('a')\n", kind: KeyError},
+		{source: "{}.get([1])\n", kind: TypeError},
+		{source: "{}.pop([1], 0)\n", kind: TypeError},
+		{source: "{}.update([1])\n", kind: TypeError},
+		{source: "{}.get()\n", kind: TypeError},
+		{source: "{}.keys(1)\n", kind: TypeError},
+		{source: "{}.append(1)\n", kind: AttributeError},
+	}
+	for _, test := range tests {
+		t.Run(test.source, func(t *testing.T) {
+			_, err := EvaluateProgram(parseProgram(t, test.source), nil)
+			evaluationError, ok := err.(Error)
+			if !ok || evaluationError.Kind != test.kind {
+				t.Fatalf("error = %#v, want %s", err, test.kind)
+			}
+		})
+	}
+}

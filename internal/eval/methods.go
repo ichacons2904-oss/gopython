@@ -9,6 +9,7 @@ import (
 
 type builtinMethodFunction func(object.Value, []object.Value, source.Position) (object.Value, error)
 type listMethodFunction func(*object.List, []object.Value, source.Position) (object.Value, error)
+type dictMethodFunction func(*object.Dict, []object.Value, source.Position) (object.Value, error)
 
 type builtinMethod struct {
 	minArgs int
@@ -26,6 +27,15 @@ var builtinMethodsByType = map[object.Type]map[string]builtinMethod{
 		"clear":  {minArgs: 0, maxArgs: 0, call: listMethod(clearList)},
 		"copy":   {minArgs: 0, maxArgs: 0, call: listMethod(copyList)},
 	},
+	object.DictType: {
+		"get":    {minArgs: 1, maxArgs: 2, call: dictMethod(getDict)},
+		"keys":   {minArgs: 0, maxArgs: 0, call: dictMethod(keysDict)},
+		"values": {minArgs: 0, maxArgs: 0, call: dictMethod(valuesDict)},
+		"pop":    {minArgs: 1, maxArgs: 2, call: dictMethod(popDict)},
+		"update": {minArgs: 1, maxArgs: 1, call: dictMethod(updateDict)},
+		"clear":  {minArgs: 0, maxArgs: 0, call: dictMethod(clearDict)},
+		"copy":   {minArgs: 0, maxArgs: 0, call: dictMethod(copyDict)},
+	},
 }
 
 func lookupBuiltinMethod(receiver object.Value, name string) (builtinMethod, bool) {
@@ -40,6 +50,16 @@ func listMethod(call listMethodFunction) builtinMethodFunction {
 			return nil, Error{Kind: RuntimeError, Message: "unsupported method receiver", Position: position}
 		}
 		return call(list, arguments, position)
+	}
+}
+
+func dictMethod(call dictMethodFunction) builtinMethodFunction {
+	return func(receiver object.Value, arguments []object.Value, position source.Position) (object.Value, error) {
+		dict, ok := receiver.(*object.Dict)
+		if !ok {
+			return nil, Error{Kind: RuntimeError, Message: "unsupported method receiver", Position: position}
+		}
+		return call(dict, arguments, position)
 	}
 }
 
@@ -131,6 +151,60 @@ func clearList(list *object.List, _ []object.Value, _ source.Position) (object.V
 
 func copyList(list *object.List, _ []object.Value, _ source.Position) (object.Value, error) {
 	return object.NewList(append([]object.Value{}, list.Elements...)), nil
+}
+
+func getDict(dict *object.Dict, arguments []object.Value, position source.Position) (object.Value, error) {
+	if !object.Hashable(arguments[0]) {
+		return nil, unhashableError(arguments[0], position)
+	}
+	if value, ok := dict.Get(arguments[0]); ok {
+		return value, nil
+	}
+	if len(arguments) == 2 {
+		return arguments[1], nil
+	}
+	return object.None{}, nil
+}
+
+func keysDict(dict *object.Dict, _ []object.Value, _ source.Position) (object.Value, error) {
+	return object.NewList(dict.Keys()), nil
+}
+
+func valuesDict(dict *object.Dict, _ []object.Value, _ source.Position) (object.Value, error) {
+	return object.NewList(dict.Values()), nil
+}
+
+func popDict(dict *object.Dict, arguments []object.Value, position source.Position) (object.Value, error) {
+	if !object.Hashable(arguments[0]) {
+		return nil, unhashableError(arguments[0], position)
+	}
+	if value, ok := dict.Delete(arguments[0]); ok {
+		return value, nil
+	}
+	if len(arguments) == 2 {
+		return arguments[1], nil
+	}
+	return nil, Error{Kind: KeyError, Message: object.Repr(arguments[0]), Position: position}
+}
+
+func updateDict(dict *object.Dict, arguments []object.Value, position source.Position) (object.Value, error) {
+	other, ok := arguments[0].(*object.Dict)
+	if !ok {
+		return nil, Error{Kind: TypeError, Message: fmt.Sprintf("update() requires a dict, got %s", arguments[0].Type()), Position: position}
+	}
+	for _, entry := range other.Entries() {
+		dict.Set(entry.Key, entry.Value)
+	}
+	return object.None{}, nil
+}
+
+func clearDict(dict *object.Dict, _ []object.Value, _ source.Position) (object.Value, error) {
+	dict.Clear()
+	return object.None{}, nil
+}
+
+func copyDict(dict *object.Dict, _ []object.Value, _ source.Position) (object.Value, error) {
+	return dict.Copy(), nil
 }
 
 func requireMethodArguments(name string, arguments []object.Value, minimum, maximum int, position source.Position) error {
