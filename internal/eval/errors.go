@@ -15,6 +15,7 @@ const (
 	RuntimeError      ErrorKind = "RuntimeError"
 	SyntaxError       ErrorKind = "SyntaxError"
 	IndexError        ErrorKind = "IndexError"
+	KeyError          ErrorKind = "KeyError"
 	MemoryError       ErrorKind = "MemoryError"
 	AttributeError    ErrorKind = "AttributeError"
 	ValueError        ErrorKind = "ValueError"

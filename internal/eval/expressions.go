@@ -7,6 +7,7 @@ import (
 	"gopython/internal/ast"
 	"gopython/internal/lexer"
 	"gopython/internal/object"
+	"gopython/internal/source"
 )
 
 func evaluateExpression(expression ast.Expression, environment *object.Environment) (object.Value, error) {
@@ -31,16 +32,10 @@ func evaluateExpression(expression ast.Expression, environment *object.Environme
 			elements[index] = value
 		}
 		return object.NewList(elements), nil
+	case *ast.DictLiteral:
+		return evaluateDictLiteral(expression, environment)
 	case *ast.IndexExpression:
-		list, index, err := evaluateListIndex(expression, environment)
-		if err != nil {
-			return nil, err
-		}
-		value, ok := list.At(index)
-		if !ok {
-			return nil, Error{Kind: IndexError, Message: "list index out of range", Position: expression.Position()}
-		}
-		return value, nil
+		return evaluateSubscript(expression, environment)
 	case *ast.AttributeExpression:
 		return evaluateAttribute(expression, environment)
 	case *ast.Identifier:
@@ -77,24 +72,80 @@ func evaluateAttribute(expression *ast.AttributeExpression, environment *object.
 	return object.BoundMethod{Receiver: receiver, Name: expression.Name}, nil
 }
 
-func evaluateListIndex(expression *ast.IndexExpression, environment *object.Environment) (*object.List, int64, error) {
+func evaluateDictLiteral(expression *ast.DictLiteral, environment *object.Environment) (object.Value, error) {
+	dict := object.NewDict()
+	for _, entry := range expression.Entries {
+		key, err := evaluateExpression(entry.Key, environment)
+		if err != nil {
+			return nil, err
+		}
+		value, err := evaluateExpression(entry.Value, environment)
+		if err != nil {
+			return nil, err
+		}
+		if !dict.Set(key, value) {
+			return nil, unhashableError(key, entry.Key.Position())
+		}
+	}
+	return dict, nil
+}
+
+func evaluateSubscript(expression *ast.IndexExpression, environment *object.Environment) (object.Value, error) {
+	collection, key, err := evaluateSubscriptOperands(expression, environment)
+	if err != nil {
+		return nil, err
+	}
+	switch collection := collection.(type) {
+	case *object.List:
+		index, err := listIndex(key, expression)
+		if err != nil {
+			return nil, err
+		}
+		value, ok := collection.At(index)
+		if !ok {
+			return nil, Error{Kind: IndexError, Message: "list index out of range", Position: expression.Position()}
+		}
+		return value, nil
+	case *object.Dict:
+		if !object.Hashable(key) {
+			return nil, unhashableError(key, expression.Index.Position())
+		}
+		value, ok := collection.Get(key)
+		if !ok {
+			return nil, Error{Kind: KeyError, Message: object.Repr(key), Position: expression.Position()}
+		}
+		return value, nil
+	default:
+		return nil, notSubscriptableError(collection, expression)
+	}
+}
+
+func evaluateSubscriptOperands(expression *ast.IndexExpression, environment *object.Environment) (object.Value, object.Value, error) {
 	collection, err := evaluateExpression(expression.Collection, environment)
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, err
 	}
-	indexValue, err := evaluateExpression(expression.Index, environment)
+	key, err := evaluateExpression(expression.Index, environment)
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, err
 	}
-	list, ok := collection.(*object.List)
+	return collection, key, nil
+}
+
+func listIndex(value object.Value, expression *ast.IndexExpression) (int64, error) {
+	index, ok := value.(object.Integer)
 	if !ok {
-		return nil, 0, Error{Kind: TypeError, Message: fmt.Sprintf("%s object is not subscriptable", collection.Type()), Position: expression.Position()}
+		return 0, Error{Kind: TypeError, Message: fmt.Sprintf("list indices must be integers, not %s", value.Type()), Position: expression.Index.Position()}
 	}
-	index, ok := indexValue.(object.Integer)
-	if !ok {
-		return nil, 0, Error{Kind: TypeError, Message: fmt.Sprintf("list indices must be integers, not %s", indexValue.Type()), Position: expression.Index.Position()}
-	}
-	return list, index.Value, nil
+	return index.Value, nil
+}
+
+func notSubscriptableError(collection object.Value, expression *ast.IndexExpression) error {
+	return Error{Kind: TypeError, Message: fmt.Sprintf("%s object is not subscriptable", collection.Type()), Position: expression.Position()}
+}
+
+func unhashableError(key object.Value, position source.Position) error {
+	return Error{Kind: TypeError, Message: fmt.Sprintf("unhashable type: %s", key.Type()), Position: position}
 }
 
 func evaluateIdentifier(expression *ast.Identifier, environment *object.Environment) (object.Value, error) {

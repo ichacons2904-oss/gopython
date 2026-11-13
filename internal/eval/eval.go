@@ -93,12 +93,25 @@ func evaluateIndexAssignment(statement *ast.IndexAssignment, environment *object
 	if err != nil {
 		return completion{}, err
 	}
-	list, index, err := evaluateListIndex(statement.Target, environment)
+	collection, key, err := evaluateSubscriptOperands(statement.Target, environment)
 	if err != nil {
 		return completion{}, err
 	}
-	if !list.Set(index, value) {
-		return completion{}, Error{Kind: IndexError, Message: "list assignment index out of range", Position: statement.Target.Position()}
+	switch collection := collection.(type) {
+	case *object.List:
+		index, err := listIndex(key, statement.Target)
+		if err != nil {
+			return completion{}, err
+		}
+		if !collection.Set(index, value) {
+			return completion{}, Error{Kind: IndexError, Message: "list assignment index out of range", Position: statement.Target.Position()}
+		}
+	case *object.Dict:
+		if !collection.Set(key, value) {
+			return completion{}, unhashableError(key, statement.Target.Index.Position())
+		}
+	default:
+		return completion{}, notSubscriptableError(collection, statement.Target)
 	}
 	return completion{value: object.None{}}, nil
 }
