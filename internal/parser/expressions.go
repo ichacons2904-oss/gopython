@@ -65,7 +65,7 @@ func (parser *Parser) parseComparison() (ast.Expression, error) {
 		return nil, err
 	}
 
-	if !isComparisonOperator(parser.current().Type) {
+	if !parser.isComparisonStart() {
 		return left, nil
 	}
 
@@ -73,8 +73,12 @@ func (parser *Parser) parseComparison() (ast.Expression, error) {
 		Pos:  left.Position(),
 		Left: left,
 	}
-	for isComparisonOperator(parser.current().Type) {
+	for parser.isComparisonStart() {
 		operator := parser.advance()
+		if operator.Type == lexer.Not {
+			parser.advance() // IN, confirmed by isComparisonStart.
+			operator.Type = lexer.NotIn
+		}
 		right, err := parser.parseAdditive()
 		if err != nil {
 			return nil, err
@@ -268,6 +272,11 @@ func isComparisonOperator(tokenType lexer.TokenType) bool {
 	default:
 		return false
 	}
+}
+
+func (parser *Parser) isComparisonStart() bool {
+	return isComparisonOperator(parser.current().Type) ||
+		(parser.check(lexer.Not) && parser.peek().Type == lexer.In)
 }
 
 func parseFloat(token lexer.Token) (float64, error) {

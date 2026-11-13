@@ -26,6 +26,7 @@ const (
 	And      TokenType = "AND"
 	Or       TokenType = "OR"
 	Not      TokenType = "NOT"
+	NotIn    TokenType = "NOT_IN" // Synthesized by the parser from NOT and IN.
 	True     TokenType = "TRUE"
 	False    TokenType = "FALSE"
 	None     TokenType = "NONE"

@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"errors"
 	"fmt"
 
 	"gopython/internal/ast"
@@ -42,6 +43,10 @@ func evaluateCall(expression *ast.CallExpression, environment *object.Environmen
 func invokeBuiltin(builtin object.Builtin, arguments []object.Value, position source.Position) (object.Value, error) {
 	value, err := builtin.Function(arguments)
 	if err != nil {
+		var typeError object.BuiltinTypeError
+		if errors.As(err, &typeError) {
+			return nil, Error{Kind: TypeError, Message: typeError.Message, Position: position}
+		}
 		return nil, Error{
 			Kind:     RuntimeError,
 			Message:  err.Error(),

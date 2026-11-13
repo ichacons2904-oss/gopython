@@ -19,6 +19,10 @@ func Register(environment *object.Environment, output io.Writer) {
 		Name:     "len",
 		Function: lenFunction,
 	})
+	environment.Set("list", object.Builtin{
+		Name:     "list",
+		Function: listFunction,
+	})
 	environment.Set("range", object.Builtin{
 		Name:     "range",
 		Function: rangeFunction,

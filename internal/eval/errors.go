@@ -17,6 +17,7 @@ const (
 	IndexError        ErrorKind = "IndexError"
 	MemoryError       ErrorKind = "MemoryError"
 	AttributeError    ErrorKind = "AttributeError"
+	ValueError        ErrorKind = "ValueError"
 )
 
 type Error struct {

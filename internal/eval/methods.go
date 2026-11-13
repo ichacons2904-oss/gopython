@@ -20,6 +20,8 @@ var builtinMethodsByType = map[object.Type]map[string]builtinMethod{
 	object.ListType: {
 		"append": {minArgs: 1, maxArgs: 1, call: listMethod(appendList)},
 		"extend": {minArgs: 1, maxArgs: 1, call: listMethod(extendList)},
+		"insert": {minArgs: 2, maxArgs: 2, call: listMethod(insertList)},
+		"remove": {minArgs: 1, maxArgs: 1, call: listMethod(removeList)},
 		"pop":    {minArgs: 0, maxArgs: 1, call: listMethod(popList)},
 		"clear":  {minArgs: 0, maxArgs: 0, call: listMethod(clearList)},
 		"copy":   {minArgs: 0, maxArgs: 0, call: listMethod(copyList)},
@@ -59,6 +61,25 @@ func invokeBoundMethod(method object.BoundMethod, arguments []object.Value, posi
 func appendList(list *object.List, arguments []object.Value, _ source.Position) (object.Value, error) {
 	list.Elements = append(list.Elements, arguments[0])
 	return object.None{}, nil
+}
+
+func insertList(list *object.List, arguments []object.Value, position source.Position) (object.Value, error) {
+	index, ok := arguments[0].(object.Integer)
+	if !ok {
+		return nil, Error{Kind: TypeError, Message: fmt.Sprintf("list indices must be integers, not %s", arguments[0].Type()), Position: position}
+	}
+	list.Insert(index.Value, arguments[1])
+	return object.None{}, nil
+}
+
+func removeList(list *object.List, arguments []object.Value, position source.Position) (object.Value, error) {
+	for index, element := range list.Elements {
+		if valuesEqual(element, arguments[0]) {
+			list.Pop(int64(index))
+			return object.None{}, nil
+		}
+	}
+	return nil, Error{Kind: ValueError, Message: "list.remove(x): x not in list", Position: position}
 }
 
 func extendList(list *object.List, arguments []object.Value, position source.Position) (object.Value, error) {
