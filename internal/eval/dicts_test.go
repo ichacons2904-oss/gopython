@@ -175,3 +175,18 @@ func TestEvaluateDictMethodErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestEvaluateDictBuiltin(t *testing.T) {
+	result := evaluateDictSource(t, "items = {'a': 1}\ncopied = dict(items)\ncopied['a'] = 2\n[items['a'], copied['a'], dict() == {}]\n")
+	want := object.NewList([]object.Value{object.Integer{Value: 1}, object.Integer{Value: 2}, object.Boolean{Value: true}})
+	if !valuesEqual(result, want) {
+		t.Fatalf("result = %s, want %s", object.Repr(result), object.Repr(want))
+	}
+
+	environment := object.NewEnvironment(nil)
+	builtin.Register(environment, nil)
+	_, err := EvaluateProgram(parseProgram(t, "dict([1])\n"), environment)
+	if evaluationError, ok := err.(Error); !ok || evaluationError.Kind != TypeError {
+		t.Fatalf("error = %#v, want TypeError", err)
+	}
+}

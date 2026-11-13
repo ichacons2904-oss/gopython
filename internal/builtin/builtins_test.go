@@ -97,3 +97,33 @@ func dictOf(keys ...object.Value) *object.Dict {
 	}
 	return dict
 }
+
+func TestDictBuiltin(t *testing.T) {
+	empty, err := dictFunction(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := empty.Display(); got != "{}" {
+		t.Fatalf("dict() = %s, want {}", got)
+	}
+
+	source := dictOf(object.String{Value: "a"})
+	copied, err := dictFunction([]object.Value{source})
+	if err != nil {
+		t.Fatal(err)
+	}
+	copied.(*object.Dict).Set(object.String{Value: "b"}, object.None{})
+	if source.Len() != 1 || copied.(*object.Dict).Len() != 2 {
+		t.Fatal("dict(source) did not return an independent copy")
+	}
+
+	invalid := [][]object.Value{
+		{object.NewList(nil)},
+		{object.NewDict(), object.NewDict()},
+	}
+	for _, arguments := range invalid {
+		if _, err := dictFunction(arguments); err == nil {
+			t.Fatalf("dict(%d arguments) returned nil error", len(arguments))
+		}
+	}
+}
