@@ -11,7 +11,7 @@ func NewList(elements []Value) *List {
 func (*List) Type() Type { return ListType }
 
 func (value *List) Display() string {
-	return formatList(value, make(map[*List]bool))
+	return Repr(value)
 }
 
 func (value *List) Iterator() Iterator {
@@ -74,7 +74,7 @@ func normalizeListIndex(index int64, length int) (int, bool) {
 	return int(index), true
 }
 
-func formatList(value *List, active map[*List]bool) string {
+func formatList(value *List, active map[Value]bool) string {
 	if active[value] {
 		return "[...]"
 	}
@@ -83,11 +83,7 @@ func formatList(value *List, active map[*List]bool) string {
 
 	parts := make([]string, len(value.Elements))
 	for index, element := range value.Elements {
-		if nested, ok := element.(*List); ok {
-			parts[index] = formatList(nested, active)
-		} else {
-			parts[index] = Repr(element)
-		}
+		parts[index] = repr(element, active)
 	}
 	return "[" + join(parts, ", ") + "]"
 }

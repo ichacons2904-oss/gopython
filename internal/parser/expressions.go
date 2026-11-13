@@ -179,6 +179,12 @@ func (parser *Parser) parsePrimary() (ast.Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+	case lexer.LeftBrace:
+		var err error
+		expression, err = parser.parseDictLiteral()
+		if err != nil {
+			return nil, err
+		}
 	case lexer.LeftParenthesis:
 		parser.advance()
 		var err error
@@ -241,6 +247,32 @@ func (parser *Parser) parseListLiteral() (ast.Expression, error) {
 		return nil, err
 	}
 	return &ast.ListLiteral{Pos: positionOf(open), Elements: elements}, nil
+}
+
+func (parser *Parser) parseDictLiteral() (ast.Expression, error) {
+	open := parser.advance()
+	entries := []ast.DictEntry{}
+	for !parser.check(lexer.RightBrace) {
+		key, err := parser.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		if _, err := parser.expect(lexer.Colon); err != nil {
+			return nil, err
+		}
+		value, err := parser.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, ast.DictEntry{Key: key, Value: value})
+		if !parser.match(lexer.Comma) {
+			break
+		}
+	}
+	if _, err := parser.expect(lexer.RightBrace); err != nil {
+		return nil, err
+	}
+	return &ast.DictLiteral{Pos: positionOf(open), Entries: entries}, nil
 }
 
 func (parser *Parser) parseCall(callee ast.Expression) (ast.Expression, error) {

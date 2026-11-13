@@ -3,13 +3,20 @@ package object
 import "strings"
 
 func Repr(value Value) string {
-	if list, ok := value.(*List); ok {
-		return formatList(list, make(map[*List]bool))
-	}
-	if value, ok := value.(String); ok {
+	return repr(value, make(map[Value]bool))
+}
+
+func repr(value Value, active map[Value]bool) string {
+	switch value := value.(type) {
+	case *List:
+		return formatList(value, active)
+	case *Dict:
+		return formatDict(value, active)
+	case String:
 		return quote(value.Value)
+	default:
+		return value.Display()
 	}
-	return value.Display()
 }
 
 func quote(text string) string {

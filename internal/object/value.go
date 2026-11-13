@@ -18,6 +18,7 @@ const (
 	FunctionType Type = "FUNCTION"
 	RangeType    Type = "RANGE"
 	ListType     Type = "LIST"
+	DictType     Type = "DICT"
 	MethodType   Type = "METHOD"
 )
 

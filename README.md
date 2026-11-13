@@ -4,9 +4,9 @@ Un intérprete de un subconjunto de Python, escrito en Go. Lee el código, lo to
 
 ## Qué soporta
 
-Enteros, floats, strings, booleanos, `None` y listas mutables; variables; aritmética con las reglas de Python (`/` da float, `//` y `%` redondean hacia abajo); comparaciones encadenadas; `and`, `or`, `not`; `if`/`elif`/`else`, `while`, `for` sobre `range` o listas, `break`, `continue`; funciones con recursión y closures, `nonlocal`, `global`, `pass`; `print`, `range`, `len` y `list`. Las listas admiten literales, indexación entera (también negativa), asignación a índices existentes, igualdad estructural, concatenación (`+`), repetición (`*`), pertenencia (`in`, `not in`) y los métodos `extend`, `append`, `insert`, `remove`, `pop`, `clear` y `copy`. `list()` acepta listas y rangos como iterables; los strings aún no son iterables en este subset. No se soportan slices ni comprehensions. Los errores indican línea y columna.
+Enteros, floats, strings, booleanos, `None`, listas y diccionarios mutables; variables; aritmética con las reglas de Python (`/` da float, `//` y `%` redondean hacia abajo); comparaciones encadenadas; `and`, `or`, `not`; `if`/`elif`/`else`, `while`, `for` sobre `range`, listas o diccionarios, `break`, `continue`; funciones con recursión y closures, `nonlocal`, `global`, `pass`; `print`, `range`, `len`, `list` y `dict`. Las listas admiten literales, indexación entera (también negativa), asignación a índices existentes, igualdad estructural, concatenación (`+`), repetición (`*`), pertenencia (`in`, `not in`) y los métodos `extend`, `append`, `insert`, `remove`, `pop`, `clear` y `copy`. `list()` acepta listas y rangos como iterables; los strings aún no son iterables en este subset. No se soportan slices ni comprehensions. Los diccionarios admiten literales (`{'a': 1}`), acceso y asignación por clave (`KeyError` si falta), igualdad sin importar el orden, pertenencia, `len`, iteración por claves en orden de inserción y los métodos `get`, `keys`, `values`, `pop`, `update`, `clear` y `copy`. Las claves pueden ser enteros, floats, strings, booleanos o `None`; `1` y `1.0` son la misma clave. `dict()` acepta otro diccionario. Los errores indican línea y columna.
 
-No hay diccionarios, clases ni excepciones por el momento. Apuntamos tenerlos para la entrega final.
+No hay clases ni excepciones por el momento. Apuntamos tenerlos para la entrega final.
 
 ## Cómo probarlo
 
@@ -27,7 +27,7 @@ internal/lexer/    tokens e indentación significativa
 internal/ast/      nodos del AST
 internal/parser/   parser descendente recursivo
 internal/object/   valores, funciones y entornos
-internal/builtin/  print, range, len y list
+internal/builtin/  print, range, len, list y dict
 internal/eval/     evaluador tree-walking
 internal/repl/     loop interactivo
 real-tests/        tests de la cátedra
@@ -37,7 +37,7 @@ examples/          programas de ejemplo
 
 ## Tests de la cátedra
 
-Tradujimos los cinco programas de `plox/real-tests` a Python y agregamos casos para floats, closures y listas.
+Tradujimos los cinco programas de `plox/real-tests` a Python y agregamos casos para floats, closures, listas y diccionarios.
 
 Como Python no tiene scope de bloque, los bloques de Lox pasaron a ser funciones, y `a < b == c` necesita paréntesis porque en Python las comparaciones se encadenan.
 
@@ -72,7 +72,7 @@ Nuestras observaciones e interpretación de los resultados:
 
 ## Diferencias con CPython
 
-Los enteros son de 64 bits y, si una cuenta se pasa, dan la vuelta en vez de crecer como en Python. `True + 1` da error (en Python `bool` es un `int`), algunos errores de built-ins salen como `RuntimeError`, una expresión entre paréntesis no puede seguir en otra línea, y los mensajes de error tienen formato propio.
+Los enteros son de 64 bits y, si una cuenta se pasa, dan la vuelta en vez de crecer como en Python. `True + 1` da error (en Python `bool` es un `int`), algunos errores de built-ins salen como `RuntimeError`, `keys()` y `values()` devuelven listas nuevas en vez de vistas, no hay `items()` porque no hay tuplas, modificar un diccionario mientras se lo recorre no da error, una expresión entre paréntesis no puede seguir en otra línea, y los mensajes de error tienen formato propio.
 
 ## REPL
 

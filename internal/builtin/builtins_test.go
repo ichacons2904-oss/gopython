@@ -71,6 +71,8 @@ func TestLenBuiltin(t *testing.T) {
 		{argument: object.Range{Start: 1, Stop: 10, Step: 3}, want: 3},
 		{argument: object.Range{Start: 5, Stop: 0, Step: -2}, want: 3},
 		{argument: object.Range{Start: 5, Stop: 0, Step: 1}, want: 0},
+		{argument: object.NewDict(), want: 0},
+		{argument: dictOf(object.String{Value: "a"}, object.String{Value: "b"}), want: 2},
 	}
 
 	for _, test := range tests {
@@ -85,5 +87,43 @@ func TestLenBuiltin(t *testing.T) {
 
 	if _, err := lenFunction([]object.Value{object.Integer{Value: 1}}); err == nil {
 		t.Fatal("len(1) returned nil error")
+	}
+}
+
+func dictOf(keys ...object.Value) *object.Dict {
+	dict := object.NewDict()
+	for _, key := range keys {
+		dict.Set(key, object.None{})
+	}
+	return dict
+}
+
+func TestDictBuiltin(t *testing.T) {
+	empty, err := dictFunction(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := empty.Display(); got != "{}" {
+		t.Fatalf("dict() = %s, want {}", got)
+	}
+
+	source := dictOf(object.String{Value: "a"})
+	copied, err := dictFunction([]object.Value{source})
+	if err != nil {
+		t.Fatal(err)
+	}
+	copied.(*object.Dict).Set(object.String{Value: "b"}, object.None{})
+	if source.Len() != 1 || copied.(*object.Dict).Len() != 2 {
+		t.Fatal("dict(source) did not return an independent copy")
+	}
+
+	invalid := [][]object.Value{
+		{object.NewList(nil)},
+		{object.NewDict(), object.NewDict()},
+	}
+	for _, arguments := range invalid {
+		if _, err := dictFunction(arguments); err == nil {
+			t.Fatalf("dict(%d arguments) returned nil error", len(arguments))
+		}
 	}
 }

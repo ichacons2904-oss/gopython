@@ -54,6 +54,8 @@ const (
 	RightParenthesis TokenType = "RIGHT_PAREN"
 	LeftBracket      TokenType = "LEFT_BRACKET"
 	RightBracket     TokenType = "RIGHT_BRACKET"
+	LeftBrace        TokenType = "LEFT_BRACE"
+	RightBrace       TokenType = "RIGHT_BRACE"
 	Dot              TokenType = "DOT"
 	Comma            TokenType = "COMMA"
 )
@@ -109,6 +111,8 @@ var oneCharacterTokens = map[rune]TokenType{
 	')': RightParenthesis,
 	'[': LeftBracket,
 	']': RightBracket,
+	'{': LeftBrace,
+	'}': RightBrace,
 	'.': Dot,
 	',': Comma,
 }

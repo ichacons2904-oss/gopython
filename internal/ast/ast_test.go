@@ -19,6 +19,7 @@ var (
 	_ Expression = (*ComparisonExpression)(nil)
 	_ Expression = (*CallExpression)(nil)
 	_ Expression = (*ListLiteral)(nil)
+	_ Expression = (*DictLiteral)(nil)
 	_ Expression = (*IndexExpression)(nil)
 	_ Expression = (*AttributeExpression)(nil)
 	_ Statement  = (*Assignment)(nil)

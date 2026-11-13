@@ -15,6 +15,10 @@ func Register(environment *object.Environment, output io.Writer) {
 		Name:     "print",
 		Function: printFunction(output),
 	})
+	environment.Set("dict", object.Builtin{
+		Name:     "dict",
+		Function: dictFunction,
+	})
 	environment.Set("len", object.Builtin{
 		Name:     "len",
 		Function: lenFunction,
