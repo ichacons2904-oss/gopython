@@ -150,3 +150,16 @@ type AttributeExpression struct {
 
 func (node AttributeExpression) Position() source.Position { return node.Pos }
 func (*AttributeExpression) expressionNode()               {}
+
+type DictLiteral struct {
+	Pos     source.Position
+	Entries []DictEntry
+}
+
+type DictEntry struct {
+	Key   Expression
+	Value Expression
+}
+
+func (node DictLiteral) Position() source.Position { return node.Pos }
+func (*DictLiteral) expressionNode()               {}
