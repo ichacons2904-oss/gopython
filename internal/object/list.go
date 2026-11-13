@@ -35,6 +35,23 @@ func (value *List) Set(index int64, element Value) bool {
 	return true
 }
 
+func (value *List) Insert(index int64, element Value) {
+	length := int64(len(value.Elements))
+	if index < 0 {
+		index += length
+		if index < 0 {
+			index = 0
+		}
+	}
+	if index > length {
+		index = length
+	}
+	position := int(index)
+	value.Elements = append(value.Elements, nil)
+	copy(value.Elements[position+1:], value.Elements[position:])
+	value.Elements[position] = element
+}
+
 func (value *List) Pop(index int64) (Value, bool) {
 	normalizedIndex, ok := normalizeListIndex(index, len(value.Elements))
 	if !ok {

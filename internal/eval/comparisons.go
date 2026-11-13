@@ -45,7 +45,7 @@ func evaluateComparison(expression *ast.ComparisonExpression, environment *objec
 
 func compareValues(left, right object.Value, operator lexer.TokenType, position source.Position) (bool, error) {
 	switch operator {
-	case lexer.In:
+	case lexer.In, lexer.NotIn:
 		list, ok := right.(*object.List)
 		if !ok {
 			return false, Error{
@@ -56,10 +56,10 @@ func compareValues(left, right object.Value, operator lexer.TokenType, position 
 		}
 		for _, element := range list.Elements {
 			if valuesEqual(left, element) {
-				return true, nil
+				return operator == lexer.In, nil
 			}
 		}
-		return false, nil
+		return operator == lexer.NotIn, nil
 	case lexer.Equal:
 		return valuesEqual(left, right), nil
 	case lexer.NotEqual:
