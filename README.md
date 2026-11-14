@@ -2,14 +2,158 @@
 
 Un intérprete de un subconjunto de Python, escrito en Go. Lee el código, lo tokeniza, arma un AST y lo recorre para ejecutarlo (tree-walking).
 
-## Qué soporta
+## Funcionalidades implementadas
 
-Enteros, floats, strings, booleanos, `None`, listas y diccionarios mutables; variables; aritmética con las reglas de Python (`/` da float, `//` y `%` redondean hacia abajo); comparaciones encadenadas; `and`, `or`, `not`; `if`/`elif`/`else`, `while`, `for` sobre `range`, listas o diccionarios, `break`, `continue`; funciones con recursión y closures, `nonlocal`, `global`, `pass`; `print`, `range`, `len`, `list` y `dict`. Las listas admiten literales, indexación entera (también negativa), asignación a índices existentes, igualdad estructural, concatenación (`+`), repetición (`*`), pertenencia (`in`, `not in`) y los métodos `extend`, `append`, `insert`, `remove`, `pop`, `clear` y `copy`. `list()` acepta listas y rangos como iterables; los strings aún no son iterables en este subset. No se soportan slices ni comprehensions. Los diccionarios admiten literales (`{'a': 1}`), acceso y asignación por clave (`KeyError` si falta), igualdad sin importar el orden, pertenencia, `len`, iteración por claves en orden de inserción y los métodos `get`, `keys`, `values`, `pop`, `update`, `clear` y `copy`. Las claves pueden ser enteros, floats, strings, booleanos o `None`; `1` y `1.0` son la misma clave. `dict()` acepta otro diccionario. Los errores indican línea y columna.
+Gothon interpreta un subconjunto de Python. Los ejemplos siguientes muestran
+las funcionalidades disponibles y las principales partes de la implementación
+que intervienen en cada una.
 
-Las definiciones de clase se ejecutan y admiten atributos de clase y herencia
-con búsqueda en profundidad de izquierda a derecha. La construcción con `C()`
-y el enlace de métodos a instancias todavía no están implementados. No hay
-excepciones por el momento.
+### 1. Valores y operadores
+
+Se soportan enteros de 64 bits, floats, strings, booleanos y `None`. Las
+operaciones aritméticas incluyen `+`, `-`, `*`, `/`, `//` y `%`; la división
+`/` devuelve un float, mientras que `//` y `%` siguen las reglas de redondeo de
+Python. También hay comparaciones encadenadas y operadores lógicos con
+cortocircuito.
+
+```python
+print(7 / 2)          # 3.5
+print(-7 // 2)        # -4
+print(1 < 2 < 3)      # True
+print(False and 1 / 0)  # False
+```
+
+**Implementación:** el lexer reconoce literales y operadores; el parser
+construye expresiones con precedencia; `internal/object` representa los valores
+y el evaluator ejecuta las operaciones y comparaciones.
+
+### 2. Control de flujo
+
+Hay condicionales `if` / `elif` / `else`, bucles `while` y `for`, y sentencias
+`break`, `continue` y `pass`. `for` recorre rangos, listas y claves de
+diccionarios. Los bloques se delimitan por indentación.
+
+```python
+for number in range(5):
+    if number == 2:
+        continue
+    if number == 4:
+        break
+    print(number)      # 0, 1, 3
+```
+
+**Implementación:** el lexer genera tokens de indentación; el parser construye
+los bloques; el evaluator ejecuta las sentencias y propaga las señales de
+`break` y `continue`.
+
+### 3. Funciones y scopes
+
+Las funciones se definen con `def`, admiten recursión y argumentos posicionales,
+y son valores que pueden pasarse o retornarse. Una función sin `return` explícito
+retorna `None`. Las funciones anidadas pueden capturar variables de su entorno;
+`nonlocal` y `global` permiten asignar en scopes exteriores.
+
+```python
+def make_counter():
+    count = 0
+    def increment():
+        nonlocal count
+        count = count + 1
+        return count
+    return increment
+
+counter = make_counter()
+print(counter())       # 1
+print(counter())       # 2
+```
+
+**Implementación:** `Function` guarda los parámetros, el cuerpo y el entorno
+donde se definió; cada llamada crea un entorno nuevo. La búsqueda de nombres es
+dinámica y tiene diferencias conocidas con Python; ver el TODO al final.
+
+### 4. Listas
+
+Las listas son mutables, admiten elementos de distintos tipos y pueden anidarse.
+Se pueden indexar con enteros, incluidos índices negativos, y asignar a índices
+existentes. También admiten igualdad, concatenación, repetición, `in`, `not in`,
+iteración y `len`.
+
+```python
+items = [1, "dos"]
+items.append(3)
+items[-1] = 4
+print(items)           # [1, 'dos', 4]
+print(4 in items)      # True
+print(items + [5])     # [1, 'dos', 4, 5]
+```
+
+Los métodos implementados son `append`, `extend`, `insert`, `remove`, `pop`,
+`clear` y `copy`. `list()` crea una lista vacía o copia una lista, rango o las
+claves de un diccionario. No se soportan slices ni comprehensions; los strings
+todavía no son iterables.
+
+**Implementación:** el AST representa literales y acceso por índice;
+`internal/object` almacena los elementos y el evaluator maneja las operaciones
+y resuelve los métodos mediante un registro por tipo.
+
+### 5. Diccionarios
+
+Los diccionarios almacenan pares clave-valor mutables. Admiten acceso y asignación
+por clave, igualdad, pertenencia, `len` e iteración por claves en orden de
+inserción. Las claves pueden ser enteros, floats, strings, booleanos o `None`.
+
+```python
+person = {"name": "Ana", "age": 30}
+person["age"] = 31
+print(person["name"])  # Ana
+print("age" in person) # True
+print(person.get("city", "unknown"))  # unknown
+```
+
+Los métodos implementados son `get`, `keys`, `values`, `pop`, `update`, `clear`
+y `copy`. `dict()` crea un diccionario vacío o una copia superficial de otro;
+`keys()` y `values()` devuelven listas. En este subset, `1` y `1.0` comparten
+clave, pero los booleanos son distintos de los enteros.
+
+**Implementación:** el parser construye los literales y accesos; el runtime
+almacena las entradas y el evaluator ejecuta las operaciones y métodos.
+
+### 6. Clases y objetos
+
+Una clase puede definir atributos y métodos. Al llamarla se crea una instancia
+y se ejecuta `__init__` si existe. Los métodos accedidos mediante la instancia
+quedan ligados a ella; los atributos propios tienen prioridad sobre los de la
+clase.
+
+```python
+class Counter:
+    def __init__(self, start):
+        self.value = start
+    def increment(self):
+        self.value = self.value + 1
+        return self.value
+
+counter = Counter(3)
+print(counter.increment())  # 4
+```
+
+Se admite herencia múltiple entre clases de usuario. La búsqueda recorre las
+bases en profundidad de izquierda a derecha, por lo que puede diferir del MRO
+de Python en un diamante. Heredar de `list` o `dict` produce `TypeError`;
+`super()` no está implementado.
+
+**Implementación:** el parser produce nodos para clases y atributos;
+`internal/object` representa clases, instancias y métodos ligados; el evaluator
+construye instancias y busca atributos en las bases.
+
+### 7. Funciones incorporadas y errores
+
+Están disponibles `print`, `range`, `len`, `list` y `dict`. Los errores indican
+línea y columna; incluyen, entre otros, `NameError`, `TypeError`, `IndexError`,
+`KeyError` y `AttributeError`. El lenguaje aún no permite capturar excepciones.
+
+**Implementación:** `internal/builtin` registra las funciones incorporadas y el
+evaluator propaga los errores con sus posiciones de origen.
 
 ## Cómo probarlo
 
@@ -114,3 +258,83 @@ Para abrir el REPL en el contenedor:
 docker run --rm -it --entrypoint /gopython gopython
 ```
 
+## TODO: resolución de scopes
+
+La búsqueda de nombres en Gothon es dinámica. Está pendiente decidir cuáles de
+sus diferencias con Python conservar como parte del dialecto y cuáles cambiar.
+Una pasada de resolución antes de la evaluación permitiría clasificar nombres y
+validar declaraciones sin depender del orden de ejecución. Los entornos podrían
+seguir usando mapas; optimizar los accesos es una decisión independiente.
+
+### Referencia: LEGB en Python
+
+En Python, la resolución léxica de nombres suele describirse como **LEGB**:
+
+- **Local**: nombres del scope actual, como los parámetros y variables de una
+  función.
+- **Enclosing**: scopes de funciones que contienen a la función actual, desde
+  el más cercano hacia afuera; aquí se encuentran las variables capturadas.
+- **Global**: el namespace del módulo donde se definió la función.
+- **Built-in**: nombres incorporados de Python, como `len` y `print`.
+
+LEGB es una guía para entender la búsqueda, no una regla de fallback idéntica
+para todos los nombres. Python analiza el cuerpo completo de una función para
+clasificarlos: si asigna a un nombre, normalmente es local en toda la función,
+incluso antes de esa asignación. Una lectura prematura produce
+`UnboundLocalError` en vez de buscar en scopes exteriores. Las declaraciones
+`global` y `nonlocal` cambian esa clasificación para todo el bloque;
+`nonlocal` requiere un binding en una función contenedora.
+
+Los cuerpos de clase tienen reglas particulares: ejecutan su código en un
+namespace propio, pero ese namespace no es un scope léxico contenedor para los
+métodos. Por eso una búsqueda simple LEGB no alcanza para describir todos los
+casos de clases anidadas.
+
+En Gothon, una lectura puede encontrar un nombre exterior antes de que una
+asignación posterior cree un nombre local. Esta diferencia se acepta como
+comportamiento del dialecto; no se propone cambiarla solo por diferir de Python.
+Las funciones incorporadas se registran en el entorno global actual, no en un
+scope built-in separado como en Python.
+
+Casos que hoy difieren de CPython y que sirven para decidir el alcance del TODO:
+
+- **Lectura de un local antes de asignarlo:**
+
+  ```python
+  x = 10
+  def show():
+      print(x)
+      x = 20
+  show()
+  ```
+
+  Gothon imprime `10`; CPython detecta que `x` es local a toda la función y
+  produce `UnboundLocalError` porque todavía no tiene valor.
+
+- **Asignación con el mismo nombre dentro de una clase anidada:**
+
+  ```python
+  x = "global"
+  def outer():
+      x = "enclosing"
+      class C:
+          x = x
+      return C.x
+  print(outer())
+  ```
+
+  Gothon imprime `enclosing`; CPython imprime `global`. El cuerpo de una clase
+  tiene reglas de búsqueda propias y no es un scope léxico para sus métodos.
+
+- **Validación anticipada de `nonlocal`:**
+
+  ```python
+  print("started")
+  def f():
+      nonlocal missing
+  f()
+  ```
+
+  Gothon imprime `started` y luego informa `SyntaxError` al ejecutar la
+  declaración. CPython rechaza el programa antes de imprimir, porque no existe
+  un binding válido en una función contenedora.
