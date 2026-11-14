@@ -17,6 +17,7 @@ const (
 	For      TokenType = "FOR"
 	In       TokenType = "IN"
 	Def      TokenType = "DEF"
+	Class    TokenType = "CLASS"
 	Nonlocal TokenType = "NONLOCAL"
 	Global   TokenType = "GLOBAL"
 	Pass     TokenType = "PASS"
@@ -75,6 +76,7 @@ var keywords = map[string]TokenType{
 	"for":      For,
 	"in":       In,
 	"def":      Def,
+	"class":    Class,
 	"nonlocal": Nonlocal,
 	"global":   Global,
 	"pass":     Pass,

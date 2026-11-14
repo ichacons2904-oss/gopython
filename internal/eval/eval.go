@@ -34,8 +34,12 @@ func evaluateStatement(statement ast.Statement, environment *object.Environment)
 		return evaluateAssignment(statement, environment)
 	case *ast.IndexAssignment:
 		return evaluateIndexAssignment(statement, environment)
+	case *ast.AttributeAssignment:
+		return evaluateAttributeAssignment(statement, environment)
 	case *ast.FunctionDefinition:
 		return evaluateFunctionDefinition(statement, environment)
+	case *ast.ClassDefinition:
+		return evaluateClassDefinition(statement, environment)
 	case *ast.IfStatement:
 		return evaluateIfStatement(statement, environment)
 	case *ast.WhileStatement:

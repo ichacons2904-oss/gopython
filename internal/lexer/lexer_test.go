@@ -96,14 +96,14 @@ func TestLexSupportsStringsAndEscapes(t *testing.T) {
 }
 
 func TestLexRecognizesKeywordsAndOperators(t *testing.T) {
-	source := "if else elif while for in def return break continue and or not True False None = + - * / // % == != < <= > >= : ( ) [ ] { } . ,\n"
+	source := "if else elif while for in def class return break continue and or not True False None = + - * / // % == != < <= > >= : ( ) [ ] { } . ,\n"
 	tokens, err := New(source).Lex()
 	if err != nil {
 		t.Fatalf("Lex() returned error: %v", err)
 	}
 
 	want := []TokenType{
-		If, Else, Elif, While, For, In, Def, Return, Break, Continue,
+		If, Else, Elif, While, For, In, Def, Class, Return, Break, Continue,
 		And, Or, Not, True, False, None,
 		Assign, Plus, Minus, Asterisk, Slash, DoubleSlash, Percent,
 		Equal, NotEqual, LessThan, LessEqual, GreaterThan, GreaterEqual,
@@ -112,6 +112,16 @@ func TestLexRecognizesKeywordsAndOperators(t *testing.T) {
 
 	if got := tokenTypes(tokens); !reflect.DeepEqual(got, want) {
 		t.Fatalf("token types = %v, want %v", got, want)
+	}
+}
+
+func TestLexClassKeywordAndIdentifier(t *testing.T) {
+	tokens, err := New("class classify: pass\n").Lex()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tokens[0].Type != Class || tokens[1].Type != Identifier || tokens[1].Lexeme != "classify" {
+		t.Fatalf("tokens = %#v, want CLASS followed by identifier classify", tokens[:2])
 	}
 }
 

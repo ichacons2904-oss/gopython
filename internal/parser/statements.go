@@ -35,8 +35,10 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 		return parser.parseForStatement()
 	case lexer.Def:
 		return parser.parseFunctionDefinition()
+	case lexer.Class:
+		return parser.parseClassDefinition()
 	case lexer.Return:
-		if parser.functionDepth == 0 {
+		if parser.functionDepth == 0 || parser.inClassBody {
 			return nil, Error{Token: parser.current(), Message: "return outside function"}
 		}
 		return parser.parseReturnStatement()
@@ -69,8 +71,9 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 		return nil, err
 	}
 	if parser.match(lexer.Assign) {
-		target, ok := expression.(*ast.IndexExpression)
-		if !ok {
+		indexTarget, isIndex := expression.(*ast.IndexExpression)
+		attributeTarget, isAttribute := expression.(*ast.AttributeExpression)
+		if !isIndex && !isAttribute {
 			return nil, Error{Token: parser.current(), Message: "invalid assignment target"}
 		}
 		value, err := parser.parseExpression()
@@ -80,7 +83,10 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 		if _, err := parser.expect(lexer.Newline); err != nil {
 			return nil, err
 		}
-		return &ast.IndexAssignment{Pos: target.Position(), Target: target, Value: value}, nil
+		if isIndex {
+			return &ast.IndexAssignment{Pos: indexTarget.Position(), Target: indexTarget, Value: value}, nil
+		}
+		return &ast.AttributeAssignment{Pos: attributeTarget.Position(), Target: attributeTarget, Value: value}, nil
 	}
 	if _, err := parser.expect(lexer.Newline); err != nil {
 		return nil, err

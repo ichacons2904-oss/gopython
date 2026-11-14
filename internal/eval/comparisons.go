@@ -140,6 +140,12 @@ func valuesEqualSeen(left, right object.Value, seen map[containerPair]bool) bool
 	case object.None:
 		_, ok := right.(object.None)
 		return ok
+	case *object.Class:
+		right, ok := right.(*object.Class)
+		return ok && left == right
+	case *object.Instance:
+		right, ok := right.(*object.Instance)
+		return ok && left == right
 	case *object.List:
 		right, ok := right.(*object.List)
 		if !ok || len(left.Elements) != len(right.Elements) {

@@ -1,9 +1,10 @@
 package object
 
 type Environment struct {
-	values    map[string]Value
-	parent    *Environment
-	redirects map[string]*Environment
+	values     map[string]Value
+	parent     *Environment
+	redirects  map[string]*Environment
+	classScope bool
 }
 
 func NewEnvironment(parent *Environment) *Environment {
@@ -11,6 +12,30 @@ func NewEnvironment(parent *Environment) *Environment {
 		values: make(map[string]Value),
 		parent: parent,
 	}
+}
+
+func NewClassEnvironment(parent *Environment) *Environment {
+	if parent != nil {
+		parent = parent.FunctionClosure()
+	}
+	environment := NewEnvironment(parent)
+	environment.classScope = true
+	return environment
+}
+
+func (environment *Environment) FunctionClosure() *Environment {
+	for environment != nil && environment.classScope {
+		environment = environment.parent
+	}
+	return environment
+}
+
+func (environment *Environment) LocalBindings() map[string]Value {
+	bindings := make(map[string]Value, len(environment.values))
+	for name, value := range environment.values {
+		bindings[name] = value
+	}
+	return bindings
 }
 
 func (environment *Environment) Get(name string) (Value, bool) {

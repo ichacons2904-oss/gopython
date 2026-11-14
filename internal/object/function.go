@@ -16,3 +16,15 @@ func (Function) Type() Type {
 func (value Function) Display() string {
 	return "<function " + value.Name + ">"
 }
+
+// UserBoundMethod keeps the original function and receiver even if their names change.
+type UserBoundMethod struct {
+	Receiver *Instance
+	Function Function
+}
+
+func (UserBoundMethod) Type() Type { return MethodType }
+
+func (method UserBoundMethod) Display() string {
+	return "<bound method " + method.Function.Name + ">"
+}

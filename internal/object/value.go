@@ -20,6 +20,8 @@ const (
 	ListType     Type = "LIST"
 	DictType     Type = "DICT"
 	MethodType   Type = "METHOD"
+	ClassType    Type = "CLASS"
+	InstanceType Type = "INSTANCE"
 )
 
 type Value interface {
