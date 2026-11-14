@@ -23,6 +23,15 @@ type IndexAssignment struct {
 func (node IndexAssignment) Position() source.Position { return node.Pos }
 func (*IndexAssignment) statementNode()                {}
 
+type AttributeAssignment struct {
+	Pos    source.Position
+	Target *AttributeExpression
+	Value  Expression
+}
+
+func (node AttributeAssignment) Position() source.Position { return node.Pos }
+func (*AttributeAssignment) statementNode()                {}
+
 type ExpressionStatement struct {
 	Expression Expression
 }
@@ -45,6 +54,16 @@ func (node FunctionDefinition) Position() source.Position {
 }
 
 func (*FunctionDefinition) statementNode() {}
+
+type ClassDefinition struct {
+	Pos   source.Position
+	Name  Identifier
+	Bases []Identifier
+	Body  []Statement
+}
+
+func (node ClassDefinition) Position() source.Position { return node.Pos }
+func (*ClassDefinition) statementNode()                {}
 
 type NonlocalStatement struct {
 	Pos   source.Position

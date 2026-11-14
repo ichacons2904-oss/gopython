@@ -15,11 +15,26 @@ func (parser *Parser) parseLoopBlock() ([]ast.Statement, error) {
 
 func (parser *Parser) parseFunctionBlock() ([]ast.Statement, error) {
 	previousLoopDepth := parser.loopDepth
+	previousClassBody := parser.inClassBody
 	parser.loopDepth = 0
+	parser.inClassBody = false
 	parser.functionDepth++
 	defer func() {
 		parser.functionDepth--
 		parser.loopDepth = previousLoopDepth
+		parser.inClassBody = previousClassBody
+	}()
+	return parser.parseBlock()
+}
+
+func (parser *Parser) parseClassBlock() ([]ast.Statement, error) {
+	previousLoopDepth := parser.loopDepth
+	previousClassBody := parser.inClassBody
+	parser.loopDepth = 0
+	parser.inClassBody = true
+	defer func() {
+		parser.loopDepth = previousLoopDepth
+		parser.inClassBody = previousClassBody
 	}()
 	return parser.parseBlock()
 }
@@ -67,7 +82,7 @@ func (parser *Parser) parseBlock() ([]ast.Statement, error) {
 
 func isCompoundStatement(tokenType lexer.TokenType) bool {
 	switch tokenType {
-	case lexer.If, lexer.While, lexer.For, lexer.Def:
+	case lexer.If, lexer.While, lexer.For, lexer.Def, lexer.Class:
 		return true
 	default:
 		return false
