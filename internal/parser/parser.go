@@ -12,6 +12,7 @@ type Parser struct {
 	position      int
 	loopDepth     int
 	functionDepth int
+	inClassBody   bool
 }
 
 type Error struct {

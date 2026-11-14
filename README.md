@@ -8,6 +8,9 @@ Enteros, floats, strings, booleanos, `None`, listas y diccionarios mutables; var
 
 No hay clases ni excepciones por el momento. Apuntamos tenerlos para la entrega final.
 
+El lexer y el parser reconocen definiciones de clase y asignaciones a atributos,
+pero el evaluator todavía no las ejecuta.
+
 ## Cómo probarlo
 
 ```bash

@@ -24,6 +24,7 @@ var (
 	_ Expression = (*AttributeExpression)(nil)
 	_ Statement  = (*Assignment)(nil)
 	_ Statement  = (*IndexAssignment)(nil)
+	_ Statement  = (*AttributeAssignment)(nil)
 	_ Statement  = (*ExpressionStatement)(nil)
 	_ Statement  = (*IfStatement)(nil)
 	_ Statement  = (*WhileStatement)(nil)
@@ -35,6 +36,7 @@ var (
 	_ Statement  = (*PassStatement)(nil)
 	_ Statement  = (*ContinueStatement)(nil)
 	_ Statement  = (*FunctionDefinition)(nil)
+	_ Statement  = (*ClassDefinition)(nil)
 )
 
 func TestASTNodesPreserveSourcePosition(t *testing.T) {
