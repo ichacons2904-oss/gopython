@@ -72,8 +72,8 @@ func evaluateAttribute(expression *ast.AttributeExpression, environment *object.
 			return value, nil
 		}
 		if value, ok := receiver.Class().LookupAttribute(expression.Name); ok {
-			if _, isFunction := value.(object.Function); isFunction {
-				return nil, Error{Kind: RuntimeError, Message: "instance method binding is not supported yet", Position: expression.Position()}
+			if function, isFunction := value.(object.Function); isFunction {
+				return object.UserBoundMethod{Receiver: receiver, Function: function}, nil
 			}
 			return value, nil
 		}

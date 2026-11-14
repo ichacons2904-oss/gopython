@@ -24,18 +24,26 @@ func evaluateCall(expression *ast.CallExpression, environment *object.Environmen
 		arguments[index] = value
 	}
 
+	return invokeCallable(callee, arguments, expression.Position())
+}
+
+func invokeCallable(callee object.Value, arguments []object.Value, position source.Position) (object.Value, error) {
 	switch callable := callee.(type) {
 	case object.Builtin:
-		return invokeBuiltin(callable, arguments, expression.Position())
+		return invokeBuiltin(callable, arguments, position)
 	case object.BoundMethod:
-		return invokeBoundMethod(callable, arguments, expression.Position())
+		return invokeBoundMethod(callable, arguments, position)
 	case object.Function:
-		return invokeFunction(callable, arguments, expression.Position())
+		return invokeFunction(callable, arguments, position)
+	case object.UserBoundMethod:
+		return invokeFunction(callable.Function, append([]object.Value{callable.Receiver}, arguments...), position)
+	case *object.Class:
+		return invokeClass(callable, arguments, position)
 	default:
 		return nil, Error{
 			Kind:     TypeError,
 			Message:  fmt.Sprintf("%s object is not callable", callee.Type()),
-			Position: expression.Position(),
+			Position: position,
 		}
 	}
 }
@@ -92,4 +100,26 @@ func invokeFunction(function object.Function, arguments []object.Value, position
 			Position: position,
 		}
 	}
+}
+
+func invokeClass(class *object.Class, arguments []object.Value, position source.Position) (object.Value, error) {
+	instance := object.NewInstance(class)
+	initializer, ok := class.LookupAttribute("__init__")
+	if !ok {
+		if len(arguments) != 0 {
+			return nil, Error{Kind: TypeError, Message: fmt.Sprintf("%s() takes no arguments", class.Name), Position: position}
+		}
+		return instance, nil
+	}
+	if function, ok := initializer.(object.Function); ok {
+		initializer = object.UserBoundMethod{Receiver: instance, Function: function}
+	}
+	result, err := invokeCallable(initializer, arguments, position)
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := result.(object.None); !ok {
+		return nil, Error{Kind: TypeError, Message: "__init__() must return None", Position: position}
+	}
+	return instance, nil
 }
