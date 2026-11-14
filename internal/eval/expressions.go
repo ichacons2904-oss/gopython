@@ -62,14 +62,31 @@ func evaluateAttribute(expression *ast.AttributeExpression, environment *object.
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := lookupBuiltinMethod(receiver, expression.Name); !ok {
-		return nil, Error{
-			Kind:     AttributeError,
-			Message:  fmt.Sprintf("%s object has no attribute %q", receiver.Type(), expression.Name),
-			Position: expression.Position(),
+	switch receiver := receiver.(type) {
+	case *object.Class:
+		if value, ok := receiver.LookupAttribute(expression.Name); ok {
+			return value, nil
+		}
+	case *object.Instance:
+		if value, ok := receiver.OwnAttribute(expression.Name); ok {
+			return value, nil
+		}
+		if value, ok := receiver.Class().LookupAttribute(expression.Name); ok {
+			if _, isFunction := value.(object.Function); isFunction {
+				return nil, Error{Kind: RuntimeError, Message: "instance method binding is not supported yet", Position: expression.Position()}
+			}
+			return value, nil
+		}
+	default:
+		if _, ok := lookupBuiltinMethod(receiver, expression.Name); ok {
+			return object.BoundMethod{Receiver: receiver, Name: expression.Name}, nil
 		}
 	}
-	return object.BoundMethod{Receiver: receiver, Name: expression.Name}, nil
+	return nil, Error{
+		Kind:     AttributeError,
+		Message:  fmt.Sprintf("%s object has no attribute %q", receiver.Type(), expression.Name),
+		Position: expression.Position(),
+	}
 }
 
 func evaluateDictLiteral(expression *ast.DictLiteral, environment *object.Environment) (object.Value, error) {

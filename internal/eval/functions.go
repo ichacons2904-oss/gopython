@@ -12,7 +12,7 @@ func evaluateFunctionDefinition(statement *ast.FunctionDefinition, environment *
 		Name:       statement.Name.Name,
 		Parameters: statement.Parameters,
 		Body:       statement.Body,
-		Closure:    environment,
+		Closure:    environment.FunctionClosure(),
 	}
 	environment.Set(statement.Name.Name, function)
 	return completion{value: object.None{}}, nil

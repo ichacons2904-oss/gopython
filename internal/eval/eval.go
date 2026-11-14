@@ -35,11 +35,11 @@ func evaluateStatement(statement ast.Statement, environment *object.Environment)
 	case *ast.IndexAssignment:
 		return evaluateIndexAssignment(statement, environment)
 	case *ast.AttributeAssignment:
-		return completion{}, Error{Kind: RuntimeError, Message: "attribute assignment is not supported yet", Position: statement.Position()}
+		return evaluateAttributeAssignment(statement, environment)
 	case *ast.FunctionDefinition:
 		return evaluateFunctionDefinition(statement, environment)
 	case *ast.ClassDefinition:
-		return completion{}, Error{Kind: RuntimeError, Message: "class definitions are not supported yet", Position: statement.Position()}
+		return evaluateClassDefinition(statement, environment)
 	case *ast.IfStatement:
 		return evaluateIfStatement(statement, environment)
 	case *ast.WhileStatement:

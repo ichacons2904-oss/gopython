@@ -6,10 +6,10 @@ Un intérprete de un subconjunto de Python, escrito en Go. Lee el código, lo to
 
 Enteros, floats, strings, booleanos, `None`, listas y diccionarios mutables; variables; aritmética con las reglas de Python (`/` da float, `//` y `%` redondean hacia abajo); comparaciones encadenadas; `and`, `or`, `not`; `if`/`elif`/`else`, `while`, `for` sobre `range`, listas o diccionarios, `break`, `continue`; funciones con recursión y closures, `nonlocal`, `global`, `pass`; `print`, `range`, `len`, `list` y `dict`. Las listas admiten literales, indexación entera (también negativa), asignación a índices existentes, igualdad estructural, concatenación (`+`), repetición (`*`), pertenencia (`in`, `not in`) y los métodos `extend`, `append`, `insert`, `remove`, `pop`, `clear` y `copy`. `list()` acepta listas y rangos como iterables; los strings aún no son iterables en este subset. No se soportan slices ni comprehensions. Los diccionarios admiten literales (`{'a': 1}`), acceso y asignación por clave (`KeyError` si falta), igualdad sin importar el orden, pertenencia, `len`, iteración por claves en orden de inserción y los métodos `get`, `keys`, `values`, `pop`, `update`, `clear` y `copy`. Las claves pueden ser enteros, floats, strings, booleanos o `None`; `1` y `1.0` son la misma clave. `dict()` acepta otro diccionario. Los errores indican línea y columna.
 
-No hay clases ni excepciones por el momento. Apuntamos tenerlos para la entrega final.
-
-El lexer y el parser reconocen definiciones de clase y asignaciones a atributos,
-pero el evaluator todavía no las ejecuta.
+Las definiciones de clase se ejecutan y admiten atributos de clase y herencia
+con búsqueda en profundidad de izquierda a derecha. La construcción con `C()`
+y el enlace de métodos a instancias todavía no están implementados. No hay
+excepciones por el momento.
 
 ## Cómo probarlo
 
