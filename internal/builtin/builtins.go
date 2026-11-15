@@ -27,6 +27,7 @@ func Register(environment *object.Environment, output io.Writer) {
 		Name:     "list",
 		Function: listFunction,
 	})
+	environment.Set("tuple", object.Builtin{Name: "tuple", Function: tupleFunction})
 	environment.Set("range", object.Builtin{
 		Name:     "range",
 		Function: rangeFunction,

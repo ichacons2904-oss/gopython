@@ -18,6 +18,8 @@ func isTruthy(value object.Value) bool {
 		return value.Value != ""
 	case object.None:
 		return false
+	case *object.Tuple:
+		return value.Len() != 0
 	case *object.List:
 		return len(value.Elements) != 0
 	case *object.Dict:

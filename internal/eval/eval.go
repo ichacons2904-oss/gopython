@@ -110,6 +110,8 @@ func evaluateIndexAssignment(statement *ast.IndexAssignment, environment *object
 		if !collection.Set(index, value) {
 			return completion{}, Error{Kind: IndexError, Message: "list assignment index out of range", Position: statement.Target.Position()}
 		}
+	case *object.Tuple:
+		return completion{}, Error{Kind: TypeError, Message: "tuple does not support item assignment", Position: statement.Target.Position()}
 	case *object.Dict:
 		if !collection.Set(key, value) {
 			return completion{}, unhashableError(key, statement.Target.Index.Position())

@@ -30,7 +30,7 @@ y el evaluator ejecuta las operaciones y comparaciones.
 ### 2. Control de flujo
 
 Hay condicionales `if` / `elif` / `else`, bucles `while` y `for`, y sentencias
-`break`, `continue` y `pass`. `for` recorre rangos, listas y claves de
+`break`, `continue` y `pass`. `for` recorre rangos, listas, tuplas y claves de
 diccionarios. Los bloques se delimitan por indentación.
 
 ```python
@@ -88,7 +88,7 @@ print(items + [5])     # [1, 'dos', 4, 5]
 ```
 
 Los métodos implementados son `append`, `extend`, `insert`, `remove`, `pop`,
-`clear` y `copy`. `list()` crea una lista vacía o copia una lista, rango o las
+`clear` y `copy`. `list()` crea una lista vacía o copia una lista, tupla, rango o las
 claves de un diccionario. No se soportan slices ni comprehensions; los strings
 todavía no son iterables.
 
@@ -96,7 +96,30 @@ todavía no son iterables.
 `internal/object` almacena los elementos y el evaluator maneja las operaciones
 y resuelve los métodos mediante un registro por tipo.
 
-### 5. Diccionarios
+### 5. Tuplas
+
+Las tuplas son secuencias inmutables: sus elementos no se pueden reemplazar,
+aunque pueden contener valores mutables. Admiten literales con y sin paréntesis,
+indexación entera (incluidos índices negativos), iteración, `len`, igualdad,
+pertenencia, concatenación y repetición.
+
+```python
+pair = 1, 2
+single = (1,)
+print(pair[-1])          # 2
+print(pair + single)     # (1, 2, 1)
+print(tuple([3, 4]))     # (3, 4)
+```
+
+`tuple()` acepta los iterables soportados por Gothon. Las tuplas aún no se
+admiten como claves de diccionario, incluso si sus elementos son hashables. No
+se soportan unpacking, slices ni comparaciones de orden entre tuplas.
+
+**Implementación:** el parser distingue las comas de tuplas de las que separan
+argumentos o elementos; el runtime conserva sus elementos y el evaluator
+implementa sus operaciones.
+
+### 6. Diccionarios
 
 Los diccionarios almacenan pares clave-valor mutables. Admiten acceso y asignación
 por clave, igualdad, pertenencia, `len` e iteración por claves en orden de
@@ -118,7 +141,7 @@ clave, pero los booleanos son distintos de los enteros.
 **Implementación:** el parser construye los literales y accesos; el runtime
 almacena las entradas y el evaluator ejecuta las operaciones y métodos.
 
-### 6. Clases y objetos
+### 7. Clases y objetos
 
 Una clase puede definir atributos y métodos. Al llamarla se crea una instancia
 y se ejecuta `__init__` si existe. Los métodos accedidos mediante la instancia
@@ -146,9 +169,9 @@ de Python en un diamante. Heredar de `list` o `dict` produce `TypeError`;
 `internal/object` representa clases, instancias y métodos ligados; el evaluator
 construye instancias y busca atributos en las bases.
 
-### 7. Funciones incorporadas y errores
+### 8. Funciones incorporadas y errores
 
-Están disponibles `print`, `range`, `len`, `list` y `dict`. Los errores indican
+Están disponibles `print`, `range`, `len`, `list`, `tuple` y `dict`. Los errores indican
 línea y columna; incluyen, entre otros, `NameError`, `TypeError`, `IndexError`,
 `KeyError` y `AttributeError`. El lenguaje aún no permite capturar excepciones.
 
@@ -174,7 +197,7 @@ internal/lexer/    tokens e indentación significativa
 internal/ast/      nodos del AST
 internal/parser/   parser descendente recursivo
 internal/object/   valores, funciones y entornos
-internal/builtin/  print, range, len, list y dict
+internal/builtin/  print, range, len, list, tuple y dict
 internal/eval/     evaluador tree-walking
 internal/repl/     loop interactivo
 real-tests/        tests de la cátedra

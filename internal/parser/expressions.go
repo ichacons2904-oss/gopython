@@ -13,6 +13,29 @@ func (parser *Parser) parseExpression() (ast.Expression, error) {
 	return parser.parseOr()
 }
 
+// parseTupleExpression is used only where commas are not delimiters.
+func (parser *Parser) parseTupleExpression() (ast.Expression, error) {
+	first, err := parser.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	if !parser.match(lexer.Comma) {
+		return first, nil
+	}
+	elements := []ast.Expression{first}
+	for !parser.check(lexer.Newline) && !parser.check(lexer.RightParenthesis) && !parser.check(lexer.Colon) && !parser.check(lexer.EOF) {
+		element, err := parser.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		elements = append(elements, element)
+		if !parser.match(lexer.Comma) {
+			break
+		}
+	}
+	return &ast.TupleLiteral{Pos: first.Position(), Elements: elements}, nil
+}
+
 func (parser *Parser) parseOr() (ast.Expression, error) {
 	left, err := parser.parseAnd()
 	if err != nil {
@@ -186,9 +209,13 @@ func (parser *Parser) parsePrimary() (ast.Expression, error) {
 			return nil, err
 		}
 	case lexer.LeftParenthesis:
-		parser.advance()
+		open := parser.advance()
+		if parser.match(lexer.RightParenthesis) {
+			expression = &ast.TupleLiteral{Pos: positionOf(open)}
+			break
+		}
 		var err error
-		expression, err = parser.parseExpression()
+		expression, err = parser.parseTupleExpression()
 		if err != nil {
 			return nil, err
 		}
