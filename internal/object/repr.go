@@ -8,6 +8,8 @@ func Repr(value Value) string {
 
 func repr(value Value, active map[Value]bool) string {
 	switch value := value.(type) {
+	case *Tuple:
+		return formatTuple(value, active)
 	case *List:
 		return formatList(value, active)
 	case *Dict:

@@ -96,6 +96,18 @@ func contains(container, element object.Value, position source.Position) (bool, 
 			}
 		}
 		return false, nil
+	case *object.Tuple:
+		it := container.Iterator()
+		for {
+			candidate, ok := it.Next()
+			if !ok {
+				break
+			}
+			if valuesEqual(element, candidate) {
+				return true, nil
+			}
+		}
+		return false, nil
 	case *object.Dict:
 		if !object.Hashable(element) {
 			return false, unhashableError(element, position)
@@ -146,6 +158,24 @@ func valuesEqualSeen(left, right object.Value, seen map[containerPair]bool) bool
 	case *object.Instance:
 		right, ok := right.(*object.Instance)
 		return ok && left == right
+	case *object.Tuple:
+		right, ok := right.(*object.Tuple)
+		if !ok || left.Len() != right.Len() {
+			return false
+		}
+		pair := containerPair{left: left, right: right}
+		if seen[pair] {
+			return true
+		}
+		seen[pair] = true
+		for i := 0; i < left.Len(); i++ {
+			a, _ := left.At(int64(i))
+			b, _ := right.At(int64(i))
+			if !valuesEqualSeen(a, b, seen) {
+				return false
+			}
+		}
+		return true
 	case *object.List:
 		right, ok := right.(*object.List)
 		if !ok || len(left.Elements) != len(right.Elements) {

@@ -32,6 +32,16 @@ func evaluateExpression(expression ast.Expression, environment *object.Environme
 			elements[index] = value
 		}
 		return object.NewList(elements), nil
+	case *ast.TupleLiteral:
+		elements := make([]object.Value, len(expression.Elements))
+		for index, element := range expression.Elements {
+			value, err := evaluateExpression(element, environment)
+			if err != nil {
+				return nil, err
+			}
+			elements[index] = value
+		}
+		return object.NewTuple(elements), nil
 	case *ast.DictLiteral:
 		return evaluateDictLiteral(expression, environment)
 	case *ast.IndexExpression:
@@ -121,6 +131,16 @@ func evaluateSubscript(expression *ast.IndexExpression, environment *object.Envi
 		value, ok := collection.At(index)
 		if !ok {
 			return nil, Error{Kind: IndexError, Message: "list index out of range", Position: expression.Position()}
+		}
+		return value, nil
+	case *object.Tuple:
+		index, ok := key.(object.Integer)
+		if !ok {
+			return nil, Error{Kind: TypeError, Message: fmt.Sprintf("tuple indices must be integers, not %s", key.Type()), Position: expression.Index.Position()}
+		}
+		value, ok := collection.At(index.Value)
+		if !ok {
+			return nil, Error{Kind: IndexError, Message: "tuple index out of range", Position: expression.Position()}
 		}
 		return value, nil
 	case *object.Dict:
@@ -230,6 +250,29 @@ func evaluateBinary(expression *ast.BinaryExpression, environment *object.Enviro
 	}
 
 	if expression.Operator == lexer.Plus {
+		leftTuple, lok := left.(*object.Tuple)
+		rightTuple, rok := right.(*object.Tuple)
+		if lok && rok {
+			maxInt := int(^uint(0) >> 1)
+			if leftTuple.Len() > maxInt-rightTuple.Len() {
+				return nil, Error{Kind: MemoryError, Message: "tuple concatenation result is too large", Position: expression.Position()}
+			}
+			elements := make([]object.Value, 0, leftTuple.Len()+rightTuple.Len())
+			for _, tuple := range []*object.Tuple{leftTuple, rightTuple} {
+				it := tuple.Iterator()
+				for {
+					v, ok := it.Next()
+					if !ok {
+						break
+					}
+					elements = append(elements, v)
+				}
+			}
+			return object.NewTuple(elements), nil
+		}
+		if lok || rok {
+			return nil, Error{Kind: TypeError, Message: "tuple concatenation requires two tuples", Position: expression.Position()}
+		}
 		leftList, leftIsList := left.(*object.List)
 		rightList, rightIsList := right.(*object.List)
 		if leftIsList && rightIsList {
@@ -252,6 +295,12 @@ func evaluateBinary(expression *ast.BinaryExpression, environment *object.Enviro
 		}
 	}
 	if expression.Operator == lexer.Asterisk {
+		if tuple, ok := left.(*object.Tuple); ok {
+			return repeatTuple(expression, tuple, right)
+		}
+		if tuple, ok := right.(*object.Tuple); ok {
+			return repeatTuple(expression, tuple, left)
+		}
 		if list, ok := left.(*object.List); ok {
 			return repeatList(expression, list, right)
 		}
@@ -281,6 +330,32 @@ func evaluateBinary(expression *ast.BinaryExpression, environment *object.Enviro
 		}
 	}
 	return evaluateFloatArithmetic(expression, leftNumber, rightNumber)
+}
+
+func repeatTuple(expression *ast.BinaryExpression, tuple *object.Tuple, countValue object.Value) (object.Value, error) {
+	count, ok := countValue.(object.Integer)
+	if !ok {
+		return nil, Error{Kind: TypeError, Message: fmt.Sprintf("can't multiply tuple by %s", countValue.Type()), Position: expression.Position()}
+	}
+	if count.Value <= 0 || tuple.Len() == 0 {
+		return object.NewTuple(nil), nil
+	}
+	maxInt := int64(int(^uint(0) >> 1))
+	if int64(tuple.Len()) > maxInt/count.Value {
+		return nil, Error{Kind: MemoryError, Message: "tuple repetition result is too large", Position: expression.Position()}
+	}
+	elements := make([]object.Value, 0, int64(tuple.Len())*count.Value)
+	for i := int64(0); i < count.Value; i++ {
+		it := tuple.Iterator()
+		for {
+			v, ok := it.Next()
+			if !ok {
+				break
+			}
+			elements = append(elements, v)
+		}
+	}
+	return object.NewTuple(elements), nil
 }
 
 func repeatList(expression *ast.BinaryExpression, list *object.List, countValue object.Value) (object.Value, error) {

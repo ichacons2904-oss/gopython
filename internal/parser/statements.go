@@ -66,7 +66,7 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 	if parser.check(lexer.Identifier) && parser.peek().Type == lexer.Assign {
 		return parser.parseAssignment()
 	}
-	expression, err := parser.parseExpression()
+	expression, err := parser.parseTupleExpression()
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 		if !isIndex && !isAttribute {
 			return nil, Error{Token: parser.current(), Message: "invalid assignment target"}
 		}
-		value, err := parser.parseExpression()
+		value, err := parser.parseTupleExpression()
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func (parser *Parser) parseAssignment() (ast.Statement, error) {
 		return nil, err
 	}
 
-	value, err := parser.parseExpression()
+	value, err := parser.parseTupleExpression()
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (parser *Parser) parseReturnStatement() (ast.Statement, error) {
 
 	if !parser.check(lexer.Newline) {
 		var err error
-		value, err = parser.parseExpression()
+		value, err = parser.parseTupleExpression()
 		if err != nil {
 			return nil, err
 		}

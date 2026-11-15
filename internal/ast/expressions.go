@@ -163,3 +163,11 @@ type DictEntry struct {
 
 func (node DictLiteral) Position() source.Position { return node.Pos }
 func (*DictLiteral) expressionNode()               {}
+
+type TupleLiteral struct {
+	Pos      source.Position
+	Elements []Expression
+}
+
+func (node TupleLiteral) Position() source.Position { return node.Pos }
+func (*TupleLiteral) expressionNode()               {}

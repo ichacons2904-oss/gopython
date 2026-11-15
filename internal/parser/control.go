@@ -91,7 +91,7 @@ func (parser *Parser) parseForStatement() (ast.Statement, error) {
 		return nil, err
 	}
 
-	iterable, err := parser.parseExpression()
+	iterable, err := parser.parseTupleExpression()
 	if err != nil {
 		return nil, err
 	}
