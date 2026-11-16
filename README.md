@@ -103,7 +103,7 @@ print(False and 1 / 0)  # False
 
 **Implementación:** el lexer reconoce literales y operadores; el parser
 construye expresiones con precedencia; `internal/object` representa los valores
-y el evaluator ejecuta las operaciones y comparaciones.
+y el evaluador ejecuta las operaciones y comparaciones.
 
 ### 2. Control de flujo
 
@@ -121,7 +121,7 @@ for number in range(5):
 ```
 
 **Implementación:** el lexer genera tokens de indentación; el parser construye
-los bloques; el evaluator ejecuta las sentencias y propaga las señales de
+los bloques; el evaluador ejecuta las sentencias y propaga las señales de
 `break` y `continue`.
 
 ### 3. Funciones y scopes
@@ -169,10 +169,10 @@ Los métodos implementados son `append`, `extend`, `insert`, `remove`, `pop`,
 `clear` y `copy`. `list()` crea una lista vacía o copia una lista, tupla, rango o las
 claves de un diccionario. Los slices `items[inicio:fin:paso]` devuelven una
 lista nueva y admiten índices negativos y paso negativo. No se soportan
-comprehensions; los strings todavía no son iterables ni admiten slices.
+comprensiones; los strings todavía no son iterables ni admiten slices.
 
 **Implementación:** el AST representa literales y acceso por índice;
-`internal/object` almacena los elementos y el evaluator maneja las operaciones
+`internal/object` almacena los elementos y el evaluador maneja las operaciones
 y resuelve los métodos mediante un registro por tipo.
 
 ### 5. Tuplas
@@ -198,7 +198,7 @@ tuplas aún no se admiten como claves de diccionario, incluso si sus elementos
 son hashables. No hay comparaciones de orden entre tuplas.
 
 **Implementación:** el parser distingue las comas de tuplas de las que separan
-argumentos o elementos; el runtime conserva sus elementos y el evaluator
+argumentos o elementos; el runtime conserva sus elementos y el evaluador
 implementa sus operaciones.
 
 ### 6. Diccionarios
@@ -217,11 +217,11 @@ print(person.get("city", "unknown"))  # unknown
 
 Los métodos implementados son `get`, `keys`, `values`, `pop`, `update`, `clear`
 y `copy`. `dict()` crea un diccionario vacío o una copia superficial de otro;
-`keys()` y `values()` devuelven listas. En este subset, `1` y `1.0` comparten
+`keys()` y `values()` devuelven listas. En este subconjunto, `1` y `1.0` comparten
 clave, pero los booleanos son distintos de los enteros.
 
 **Implementación:** el parser construye los literales y accesos; el runtime
-almacena las entradas y el evaluator ejecuta las operaciones y métodos.
+almacena las entradas y el evaluador ejecuta las operaciones y métodos.
 
 ### 7. Clases y objetos
 
@@ -248,7 +248,7 @@ de Python en un diamante. Heredar de `list` o `dict` produce `TypeError`;
 `super()` no está implementado.
 
 **Implementación:** el parser produce nodos para clases y atributos;
-`internal/object` representa clases, instancias y métodos ligados; el evaluator
+`internal/object` representa clases, instancias y métodos ligados; el evaluador
 construye instancias y busca atributos en las bases.
 
 ### 8. Funciones incorporadas y errores
@@ -258,7 +258,7 @@ línea y columna; incluyen, entre otros, `NameError`, `TypeError`, `IndexError`,
 `KeyError`, `AttributeError` y `RecursionError`. El lenguaje aún no permite capturar excepciones.
 
 **Implementación:** `internal/builtin` registra las funciones incorporadas y el
-evaluator propaga los errores con sus posiciones de origen.
+evaluador propaga los errores con sus posiciones de origen.
 
 ## Diferencias con Lox
 
@@ -267,8 +267,8 @@ Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto
 ### Scope y resolución de nombres
 
 - **El scope es la función, no el bloque.** `if`, `while` y `for` no crean scope: una variable asignada adentro sigue viva al salir, incluida la del `for`. *Implementación:* hay un entorno nuevo por llamada a función y no por bloque. plox crea uno por cada bloque y otro por cada llamada.
-- **Asignar es declarar.** En Lox, `x = 2` modifica una `x` ya declarada, aunque esté en un entorno de afuera, y es un error si no existe (`Env.assign` en plox). En Python siempre crea o actualiza `x` en el scope actual, así que para modificar una variable de afuera hay que declararlo con `nonlocal` o `global`. Sin `nonlocal`, el contador clásico de closures en CPython da `UnboundLocalError`. *Implementación:* `Environment.Set` escribe siempre en el entorno actual; `nonlocal x` y `global x` registran una redirección de `x` al entorno de la función contenedora o al global.
-- **El "closure bug".** Traducimos `plox/examples/closure-bug.lox` (el mismo caso está en `real-tests/2-functions.lox`) usando una función en lugar del bloque:
+- **Asignar es declarar.** En Lox, `x = 2` modifica una `x` ya declarada, aunque esté en un entorno de afuera, y es un error si no existe (`Env.assign` en plox). En Python siempre crea o actualiza `x` en el scope actual, así que para modificar una variable de afuera hay que declararla con `nonlocal` o `global`. Sin `nonlocal`, el contador clásico de closures en CPython da `UnboundLocalError`. *Implementación:* `Environment.Set` escribe siempre en el entorno actual; `nonlocal x` y `global x` registran una redirección de `x` al entorno de la función contenedora o al global.
+- **El "closure bug".** Tradujimos `plox/examples/closure-bug.lox` (el mismo caso está en `plox/real-tests/2-functions.lox`) usando una función en lugar del bloque:
 
   ```python
   a = "global"
@@ -288,9 +288,9 @@ Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto
   | CPython | `NameError` en la primera llamada |
   | gopython | `global`, `block` |
 
-  En Python no es un bug porque un scope no puede ganar una variable a mitad de camino, como pasa con `var a` en un bloque de Lox. Antes de ejecutar, el compilador decide qué nombres son locales de cada función: como `block` asigna `a`, `a` es local de `block` desde la primera línea, y en la primera llamada todavía no tiene valor. Python resuelve de forma estática *a qué variable* se refiere un nombre, como el `Resolver` de plox, y lee *su valor* al ejecutar (*late binding*). Por eso, si se reasigna una global que ya existe, la función ve el valor nuevo: ese caso (`LATE BINDING` en `real-tests/2-functions.py`) da lo mismo en plox, CPython y gopython, porque plox no resuelve las globales: las busca al ejecutar.
+  En Python no es un bug porque un scope no puede ganar una variable a mitad de camino, como pasa con `var a` en un bloque de Lox. Antes de ejecutar, el compilador decide qué nombres son locales de cada función: como `block` asigna `a`, `a` es local de `block` desde la primera línea, y en la primera llamada todavía no tiene valor. Python resuelve de forma estática *a qué variable* se refiere un nombre, como el `Resolver` de plox, y lee *su valor* al ejecutar (*late binding*). Por eso, si se reasigna una global que ya existe, la función ve el valor nuevo: ese caso (`LATE BINDING` en `real-tests/2-functions.py`) da lo mismo en plox, CPython y gopython, porque plox no resuelve las globales, sino que las busca al ejecutar.
 
-  gopython no tiene resolver: busca cada nombre por la cadena de entornos al leerlo. Por eso, en el ejemplo de arriba se comporta como la rama `tree-walk` de plox, y no da `UnboundLocalError`. Es una diferencia que aceptamos como parte del dialecto (ver [Resolución de scopes](#resolución-de-scopes)).
+  gopython no tiene resolver: busca cada nombre por la cadena de entornos al leerlo. Por eso, en el ejemplo de arriba se comporta como la rama `tree-walk` de plox y no da error. Es una diferencia que aceptamos como parte del dialecto (ver [Resolución de scopes](#resolución-de-scopes)).
 
   Aclaración sobre `real-tests`: el test `CLOSURE BUG` de plox no tiene una traducción fiel a Python, porque depende de declarar `var a` en un bloque. En `real-tests/2-functions.py` lo reemplazamos por `LATE BINDING`, que sí pasa. Que ese test pase no quiere decir que gopython resuelva el closure bug: con el ejemplo original, se comporta como plox sin resolver.
 - **Closures dentro de un bucle.** Capturan la variable, no su valor: funciones creadas en un `for` ven todas el último valor. En Lox pasa lo mismo: el parser de plox traduce el `for` a `{ inicializador; while (condición) { cuerpo; incremento; } }`, así que la variable se declara una sola vez.
@@ -379,7 +379,7 @@ Casos que difieren de CPython:
   show()
   ```
 
-  gopython imprime `10`; CPython detecta que `x` es local a toda la función y
+  gopython imprime `10`; CPython detecta que `x` es local en toda la función y
   produce `UnboundLocalError` porque todavía no tiene valor.
 
 - **Asignación con el mismo nombre dentro de una clase anidada:**
@@ -412,7 +412,7 @@ Casos que difieren de CPython:
 
 ## Benchmarks
 
-En la siguiente tabla mostramos el tiempo de nuestra implementación de gopython, comparándolo con el de otras implementaciones. Fueron corridos en un Apple M4, generado con `benchmarks/compare.py`:
+En la siguiente tabla comparamos el tiempo de gopython con el de otras implementaciones. Los corrimos en un Apple M4 con `benchmarks/compare.py`:
 
 | Programa | gopython | gpython | RustPython | CPython | PyPy |
 | --- | --- | --- | --- | --- | --- |
@@ -451,7 +451,7 @@ En `fib`, la mitad de las asignaciones son de `NewEnvironment` (el struct del en
 
 - **Arranque:** gopython y gpython son binarios de Go que leen el archivo y empiezan. CPython, PyPy y RustPython primero cargan su runtime y varios módulos.
 - **Llamadas a funciones, nuestro punto más débil:** en `fib` CPython es casi 6 veces más rápido. Cada llamada nuestra crea un entorno con un mapa, copia los argumentos y busca cada nombre recorriendo mapas (`fib` es global, así que primero falla en el entorno local). CPython decide al compilar qué nombres son locales, les asigna un índice en un arreglo del *frame* y lee `n` sin hashear nada. Una pasada de resolución antes de ejecutar, como el `Resolver` de plox pero con índices en lugar de distancias, atacaría justo esto.
-- **Números:** cada `int` o `float` intermedio se guarda en una interfaz de Go, y eso lo copia al heap (6 asignaciones por iteración en floats). CPython también crea un objeto por número, pero reutiliza los enteros chicos y tiene listas de objetos libres para floats, y por eso solo nos saca entre 7% y 19% en bucles, strings y floats.
+- **Números:** cada `int` o `float` intermedio se guarda en una interfaz de Go, y eso lo copia al heap (6 asignaciones por iteración en floats). CPython también crea un objeto por número, pero reutiliza los enteros chicos y tiene listas de objetos libres para floats, y por eso solo nos saca entre un 7% y un 19% en bucles, strings y floats.
 - **Listas y diccionarios:** CPython es el doble de rápido. Nuestro `d[k]` normaliza la clave y la busca en un mapa de Go, y `d.get(k)` crea un método ligado y después busca `get` por nombre en una tabla; CPython tiene instrucciones de bytecode especializadas para subíndices y llamadas a métodos, que evitan crear el objeto intermedio.
 - **gpython y RustPython:** compilan a bytecode, pero implementan Python completo: enteros de precisión arbitraria y operadores que buscan el método según el tipo. Nosotros usamos un `int64` y un `switch`. Les ganamos en casi todo en parte porque hacemos menos; en `fib` y closures estamos parejos con gpython.
 - **PyPy:** su JIT traduce los bucles calientes a código de máquina y especializa por tipo; queda entre 5 y 17 veces más rápido que gopython.
