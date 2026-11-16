@@ -182,6 +182,31 @@ línea y columna; incluyen, entre otros, `NameError`, `TypeError`, `IndexError`,
 **Implementación:** `internal/builtin` registra las funciones incorporadas y el
 evaluator propaga los errores con sus posiciones de origen.
 
+## Qué corre y qué no
+
+Una guía rápida para saber si un programa va a correr. No es exhaustiva; el
+detalle está en la
+[especificación](../lengcomp/wiki/03-especificacion-subconjunto.md#estado-de-implementación).
+Lo que no está soportado da un error de sintaxis, `NameError`, `TypeError` o
+`AttributeError`; nunca se ignora en silencio.
+
+| Tema | Corre | No corre |
+| --- | --- | --- |
+| Valores | `int` (64 bits), `float`, `str`, `bool`, `None` | enteros grandes (`2 ** 70`), `1e3`, `0xff`, strings con triple comilla, sets |
+| Operadores | `+ - * / // %`, comparaciones encadenadas, `and`/`or`/`not`, `in`/`not in` | `**`, `+=` y demás asignaciones aumentadas, `is`, operadores de bits, `:=`, `a if c else b` |
+| Control de flujo | `if`/`elif`/`else`, `while`, `for`, `break`, `continue`, `pass`, bloques de una línea | `else` en bucles, `try`/`except`/`raise`, `with`, `assert`, `del`, `;` |
+| Funciones | parámetros posicionales, recursión, closures, `nonlocal`, `global`, funciones como valores | argumentos por defecto o con nombre (`print(x, sep="")` incluido), `*args`, `lambda`, generadores (`yield`), decoradores, docstrings |
+| Strings | literales con escapes, `+`, comparación, `len` | indexar, slices, recorrer, `in`, `*`, métodos (`upper`, `split`, ...), f-strings |
+| Listas y tuplas | literales, índices negativos, slices, `+`, `*`, `append`, `extend`, `insert`, `remove`, `pop`, `clear`, `copy` | `sort`, `index`, `count`, comprensiones, literales en varias líneas |
+| Diccionarios | literales, `d[k]`, `get`, `keys`, `values`, `pop`, `update`, `clear`, `copy` | `items()`, tuplas como claves, comprensiones |
+| Asignación | nombres, índices, atributos, `a, b = b, a` | `a = b = 1`, `for k, v in ...`, `a, *resto = ...` |
+| Clases | atributos, métodos, `__init__`, herencia múltiple | `super()`, `isinstance`, `type`, métodos especiales como `__str__` (se pueden definir, pero no se usan) |
+| Built-ins | `print`, `range`, `len`, `list`, `tuple`, `dict` | `str`, `int`, `float`, `bool`, `min`, `max`, `sum`, `sorted`, `input`, `open` |
+| Módulos | un solo archivo | `import`, `__name__` |
+
+Una recursión infinita no da `RecursionError`: termina el proceso con un stack
+overflow de Go.
+
 ## Cómo probarlo
 
 ```bash
@@ -225,29 +250,55 @@ En la siguiente tabla mostramos el tiempo de nuestra implementacion de gopython,
 
 | Programa | gopython | gpython | RustPython | CPython | PyPy |
 | --- | --- | --- | --- | --- | --- |
-| arranque | 2 ms | 1.19x | 10.56x | 7.79x | 8.37x |
-| bucles | 154 ms | 1.28x | 2.10x | 0.84x | 0.12x |
-| strings | 205 ms | 1.21x | 2.28x | 0.76x | 0.19x |
-| floats | 308 ms | 1.23x | 2.72x | 0.74x | 0.08x |
-| closures | 292 ms | 1.01x | 1.43x | 0.33x | 0.06x |
-| `fib` | 345 ms | 1.10x | 1.68x | 0.19x | 0.08x |
+| arranque | 2 ms | 1.17x | 9.63x | 6.21x | 7.66x |
+| bucles | 159 ms | 1.27x | 2.05x | 0.93x | 0.12x |
+| strings | 218 ms | 1.17x | 2.19x | 0.88x | 0.18x |
+| floats | 334 ms | 1.19x | 2.54x | 0.81x | 0.08x |
+| listas y diccionarios | 222 ms | — | 1.35x | 0.47x | 0.13x |
+| closures | 315 ms | 0.97x | 1.37x | 0.37x | 0.06x |
+| `fib` | 373 ms | 1.05x | 1.60x | 0.17x | 0.08x |
 
-Nuestras observaciones e interpretación de los resultados: 
+Tiempo medio de gopython; para el resto, cuántas veces ese tiempo (menos de 1 es más rápido que gopython). 2026-11-16, CPython 3.15.0, PyPy 8.0.0, RustPython 0.5.0 y gpython 0.2.0; detalle en [`benchmarks/results/comparison.md`](benchmarks/results/comparison.md). gpython no corre `lists_dicts.py` porque sus diccionarios solo aceptan strings como claves.
+
+### Dónde se va el tiempo
+
+Para respaldar las conclusiones con datos, cada programa también se puede correr como benchmark de Go y perfilar:
+
+```bash
+go test ./cmd/gopython -run '^$' -bench Programs -benchmem
+go test ./cmd/gopython -run '^$' -bench 'Programs/fib$' -cpuprofile cpu.out
+go tool pprof -top cpu.out
+```
+
+Las asignaciones de memoria de `-benchmem` son exactas:
+
+| Programa | Qué repite | Asignaciones | Por repetición |
+| --- | --- | --- | --- |
+| `fib` | 2.692.537 llamadas | 10,8 millones (1 GB) | 4 asignaciones, 384 B |
+| closures | 2.000.000 llamadas | 12,0 millones (704 MB) | 6 asignaciones, 352 B |
+| floats | 3.000.000 iteraciones | 18,0 millones | 6 asignaciones |
+| bucles | 2.250.000 iteraciones | 6,4 millones | 2,8 asignaciones |
+
+En `fib`, la mitad de las asignaciones son de `NewEnvironment` (el struct del entorno y su mapa), un cuarto es el slice de argumentos y el otro cuarto aparece al escribir el parámetro en el mapa. El perfil de CPU da lo mismo: más de la mitad de las muestras del intérprete pasan por `Environment.Get`/`Set` y por mapas de Go, y una de cada cinco por `NewEnvironment`. En closures, tres de cada cuatro muestras pasan por los métodos de `Environment`, incluida la redirección de `nonlocal`, que se vuelve a armar en cada llamada. En macOS el perfil de CPU de Go es impreciso (la señal de muestreo llega a cualquier hilo), así que tomamos sus porcentajes como orientativos y los cruzamos con las asignaciones.
+
+### Conclusiones
 
 - **Arranque:** gopython y gpython son binarios de Go que leen el archivo y empiezan. CPython, PyPy y RustPython primero cargan su runtime y varios módulos.
-- **gpython y RustPython:** compilan a bytecode y nosotros no, pero implementan Python completo: enteros de precisión arbitraria y operadores que buscan el método según el tipo. Nosotros usamos un `int64` y un `switch`. Somos más rápidos en parte porque hacemos menos.
-- **CPython:** nos gana en todo menos en el arranque. La mayor diferencia está en las llamadas a funciones (`fib`). CPython sabe al compilar dónde está cada variable local y la lee por índice; nosotros creamos un mapa por llamada y buscamos cada variable por nombre. Una pasada de resolución antes de ejecutar, como la de *Crafting Interpreters*, atacaría justo eso.
-- **PyPy.** Tiene un JIT que traduce los bucles calientes a código de máquina, por eso está en otra liga.
+- **Llamadas a funciones, nuestro punto más débil:** en `fib` CPython es casi 6 veces más rápido. Cada llamada nuestra crea un entorno con un mapa, copia los argumentos y busca cada nombre recorriendo mapas (`fib` es global, así que primero falla en el entorno local). CPython decide al compilar qué nombres son locales, les asigna un índice en un arreglo del *frame* y lee `n` sin hashear nada. Una pasada de resolución antes de ejecutar, como el `Resolver` de plox pero con índices en lugar de distancias, atacaría justo esto.
+- **Números:** cada `int` o `float` intermedio se guarda en una interfaz de Go, y eso lo copia al heap (6 asignaciones por iteración en floats). CPython también crea un objeto por número, pero reutiliza los enteros chicos y tiene listas de objetos libres para floats, y por eso solo nos saca entre 7% y 19% en bucles, strings y floats.
+- **Listas y diccionarios:** CPython es el doble de rápido. Nuestro `d[k]` normaliza la clave y la busca en un mapa de Go, y `d.get(k)` crea un método ligado y después busca `get` por nombre en una tabla; CPython tiene instrucciones de bytecode especializadas para subíndices y llamadas a métodos, que evitan crear el objeto intermedio.
+- **gpython y RustPython:** compilan a bytecode, pero implementan Python completo: enteros de precisión arbitraria y operadores que buscan el método según el tipo. Nosotros usamos un `int64` y un `switch`. Les ganamos en casi todo en parte porque hacemos menos; en `fib` y closures estamos parejos con gpython.
+- **PyPy:** su JIT traduce los bucles calientes a código de máquina y especializa por tipo; queda entre 5 y 17 veces más rápido que gopython.
 
 ## Diferencias con Lox
 
-Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto un programa al ejecutarse, y en cómo cambiaron la implementación. Las sintácticas (indentación, `def`, `None`, sin `;`) son estéticas. Lox es el del libro *Crafting Interpreters* y el de [plox](https://github.com/FdelMazo/plox); los ejemplos de Python los corrimos en CPython 3.15 y en gopython.
+Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto un programa al ejecutarse, y en cómo cambiaron la implementación. Los ejemplos de Python los corrimos en CPython 3.15 y en gopython. Como referencia de Lox usamos [plox](https://github.com/FdelMazo/plox), el intérprete de la cátedra: la rama `main`, que ya tiene resolver, y la rama `tree-walk` para el intérprete sin resolver. plox no tiene clases; para clases tomamos el Lox del libro.
 
 ### Scope y resolución de nombres
 
-- **El scope es la función, no el bloque.** `if`, `while` y `for` no crean scope: una variable asignada adentro sigue viva al salir, incluida la del `for`. *Implementación:* hay un entorno nuevo por llamada a función y no por bloque, como en jlox.
-- **Asignar es declarar.** En Lox, `x = 2` sube por la cadena de entornos hasta encontrar `x`. En Python siempre crea o actualiza `x` en el scope actual, así que para modificar una variable de afuera hay que declararlo con `nonlocal` o `global`. Sin `nonlocal`, el contador clásico de closures en CPython da `UnboundLocalError`. *Implementación:* `Environment.Set` escribe siempre en el entorno actual; `nonlocal x` y `global x` registran una redirección de `x` al entorno de la función contenedora o al global.
-- **El "closure bug".** Traducimos el ejemplo del capítulo 11 usando una función en lugar del bloque:
+- **El scope es la función, no el bloque.** `if`, `while` y `for` no crean scope: una variable asignada adentro sigue viva al salir, incluida la del `for`. *Implementación:* hay un entorno nuevo por llamada a función y no por bloque. plox crea uno por cada bloque y otro por cada llamada.
+- **Asignar es declarar.** En Lox, `x = 2` modifica una `x` ya declarada, aunque esté en un entorno de afuera, y es un error si no existe (`Env.assign` en plox). En Python siempre crea o actualiza `x` en el scope actual, así que para modificar una variable de afuera hay que declararlo con `nonlocal` o `global`. Sin `nonlocal`, el contador clásico de closures en CPython da `UnboundLocalError`. *Implementación:* `Environment.Set` escribe siempre en el entorno actual; `nonlocal x` y `global x` registran una redirección de `x` al entorno de la función contenedora o al global.
+- **El "closure bug".** Traducimos `plox/examples/closure-bug.lox` (el mismo caso está en `real-tests/2-functions.lox`) usando una función en lugar del bloque:
 
   ```python
   a = "global"
@@ -262,15 +313,15 @@ Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto
 
   | Intérprete | Salida |
   | --- | --- |
-  | Lox sin resolver (capítulo 10) | `global`, `block` (el bug) |
-  | Lox con resolver (capítulo 11) | `global`, `global` |
+  | plox `tree-walk`, sin resolver | `global`, `block` (el bug) |
+  | plox `main`, con resolver | `global`, `global` |
   | CPython | `NameError` en la primera llamada |
   | gopython | `global`, `block` |
 
-  En Python no es un bug porque un scope no puede ganar una variable a mitad de camino, como pasa con `var a` en un bloque de Lox. Antes de ejecutar, el compilador decide qué nombres son locales de cada función: como `block` asigna `a`, `a` es local de `block` desde la primera línea, y en la primera llamada todavía no tiene valor. Python resuelve de forma estática *a qué variable* se refiere un nombre, como el resolver de Lox, y lee *su valor* al ejecutar (*late binding*). Por eso, si se reasigna una global que ya existe, la función ve el valor nuevo: ese caso (`LATE BINDING` en `real-tests/2-functions.py`) da lo mismo en Lox, CPython y gopython.
+  En Python no es un bug porque un scope no puede ganar una variable a mitad de camino, como pasa con `var a` en un bloque de Lox. Antes de ejecutar, el compilador decide qué nombres son locales de cada función: como `block` asigna `a`, `a` es local de `block` desde la primera línea, y en la primera llamada todavía no tiene valor. Python resuelve de forma estática *a qué variable* se refiere un nombre, como el `Resolver` de plox, y lee *su valor* al ejecutar (*late binding*). Por eso, si se reasigna una global que ya existe, la función ve el valor nuevo: ese caso (`LATE BINDING` en `real-tests/2-functions.py`) da lo mismo en plox, CPython y gopython, porque plox no resuelve las globales: las busca al ejecutar.
 
-  gopython no tiene resolver: busca cada nombre por la cadena de entornos al leerlo. Por eso, en el ejemplo de arriba se comporta como el Lox del capítulo 10, y no da `UnboundLocalError`. Es una diferencia que aceptamos como parte del dialecto (ver [Resolución de scopes](#resolución-de-scopes)).
-- **Closures dentro de un bucle.** Capturan la variable, no su valor: funciones creadas en un `for` ven todas el último valor. En Lox pasa lo mismo, porque el `for` declara la variable una sola vez.
+  gopython no tiene resolver: busca cada nombre por la cadena de entornos al leerlo. Por eso, en el ejemplo de arriba se comporta como la rama `tree-walk` de plox, y no da `UnboundLocalError`. Es una diferencia que aceptamos como parte del dialecto (ver [Resolución de scopes](#resolución-de-scopes)).
+- **Closures dentro de un bucle.** Capturan la variable, no su valor: funciones creadas en un `for` ven todas el último valor. En Lox pasa lo mismo: el parser de plox traduce el `for` a `{ inicializador; while (condición) { cuerpo; incremento; } }`, así que la variable se declara una sola vez.
 - **El cuerpo de una clase no es un scope para sus métodos.** Un método no ve los nombres del cuerpo de su clase; hay que escribir `self.x`. *Implementación:* el cuerpo de la clase se ejecuta en un entorno marcado como *de clase*, y las funciones definidas ahí guardan como closure el entorno de afuera de la clase.
 
 ### Qué es expresión y qué es statement
@@ -285,21 +336,21 @@ Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto
 | Condicional como expresión | no hay | `a if c else b` | no implementado |
 | `break` y `continue` | no hay | sí | sí |
 
-*Implementación:* las asignaciones son nodos de statement. El parser lee una expresión y, si después viene `=`, verifica que sea un destino válido (nombre, índice, atributo o tupla). Es el mismo truco del *l-value* de Lox, pero solo al principio de un statement; por eso `print(x = 1)` es un error de sintaxis. `print` es un built-in registrado en el entorno global: se puede guardar en una variable o pasar como argumento. `return`, `break` y `continue` no son excepciones, como en jlox, porque Go no las tiene: cada sentencia devuelve cómo terminó, y los bucles y las llamadas lo inspeccionan.
+*Implementación:* las asignaciones son nodos de statement. El parser lee una expresión y, si después viene `=`, verifica que sea un destino válido (nombre, índice, atributo o tupla). Es el mismo truco del *l-value* de `assignment()` en plox, pero solo al principio de un statement; por eso `print(x = 1)` es un error de sintaxis. `print` es un built-in registrado en el entorno global: se puede guardar en una variable o pasar como argumento. plox implementa `return` lanzando una excepción de Python (`ReturnValue`). Go no tiene excepciones, así que en gopython `return`, `break` y `continue` no lo son: cada sentencia devuelve cómo terminó, y los bucles y las llamadas lo inspeccionan.
 
 ### Valores, iteración y objetos
 
 - **Qué es falso:** en Lox solo `nil` y `false`. En Python también `0`, `0.0`, `""`, `[]`, `{}` y `()`.
-- **Números:** Lox tiene solo doubles. Python separa `int` y `float`: `/` siempre da float, y `//` y `%` redondean hacia abajo. *Implementación:* dos tipos con promoción a float, y funciones propias para `//` y `%`, porque las de Go truncan hacia cero.
+- **Números:** Lox tiene solo doubles; plox además agrega `%`, que calcula con el de Python. Python separa `int` y `float`: `/` siempre da float, y `//` y `%` redondean hacia abajo. *Implementación:* dos tipos con promoción a float, y funciones propias para `//` y `%`, porque las de Go truncan hacia cero.
 - **Igualdad y orden:** en Lox, valores de distinto tipo nunca son iguales. En Python, `1 == 1.0`, las colecciones se comparan por contenido, `"a" < "b"` es válido y `a < b < c` se encadena evaluando `b` una sola vez. *Implementación:* la comparación encadenada es un nodo con una lista de operadores, y la igualdad estructural detecta ciclos.
 - **Iteración:** el `for` de Lox se traduce a un `while`. El de Python le pide un iterador a cualquier iterable. *Implementación:* interfaces `Iterable` e `Iterator`, que implementan rangos, listas, tuplas y diccionarios.
 - **Colecciones:** Lox no tiene. En Python, listas y diccionarios son mutables y se comparten por referencia (`b = a` no copia), las tuplas no se pueden modificar, y las claves de un diccionario tienen que ser hasheables.
-- **Clases:** Lox usa `this` implícito, `init` y herencia simple con `super`. Python usa `self` explícito, `__init__`, atributos de clase compartidos, un cuerpo de clase que puede tener cualquier código, y herencia múltiple. Un método es una función común que se liga a la instancia al leerla (`obj.metodo`). *Implementación:* jlox liga el método con un entorno que contiene `this`; gopython devuelve un objeto que guarda la función y la instancia, y al llamarlo agrega la instancia como primer argumento.
+- **Clases:** el Lox del libro usa `this` implícito, `init` y herencia simple con `super`. Python usa `self` explícito, `__init__`, atributos de clase compartidos, un cuerpo de clase que puede tener cualquier código, y herencia múltiple. Un método es una función común que se liga a la instancia al leerla (`obj.metodo`). *Implementación:* en el libro, el método se liga con un entorno que contiene `this`; gopython devuelve un objeto que guarda la función y la instancia, y al llamarlo agrega la instancia como primer argumento.
 - **Errores:** Python tiene excepciones que se pueden capturar. gopython implementa los tipos de error, pero no `try`/`except`, así que un error termina el programa, como en Lox.
 
 ### Implementación
 
-Como jlox, gopython es un intérprete *tree-walking* con un parser descendente recursivo, y no compila a bytecode. En vez del patrón Visitor usa un `switch` sobre el tipo de cada nodo. El lexer genera tokens `INDENT` y `DEDENT` con una pila de niveles de indentación. No tiene resolver: los nombres se buscan al ejecutar y `nonlocal`/`global` se resuelven con redirecciones.
+Como plox, gopython es un intérprete *tree-walking* con un parser descendente recursivo, y no compila a bytecode. plox elige qué hacer con cada nodo según su tipo con `singledispatchmethod`; gopython hace lo mismo con un `switch`. El lexer genera tokens `INDENT` y `DEDENT` con una pila de niveles de indentación. A diferencia de plox, no tiene resolver: los nombres se buscan al ejecutar y `nonlocal`/`global` se resuelven con redirecciones.
 
 ## Diferencias con CPython
 
