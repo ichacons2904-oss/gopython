@@ -96,3 +96,13 @@ func (node PassStatement) Position() source.Position {
 }
 
 func (*PassStatement) statementNode() {}
+
+// UnpackAssignment assigns a fixed number of values to flat targets.
+type UnpackAssignment struct {
+	Pos     source.Position
+	Targets []Expression
+	Value   Expression
+}
+
+func (node UnpackAssignment) Position() source.Position { return node.Pos }
+func (*UnpackAssignment) statementNode()                {}

@@ -23,7 +23,7 @@ func (parser *Parser) parseTupleExpression() (ast.Expression, error) {
 		return first, nil
 	}
 	elements := []ast.Expression{first}
-	for !parser.check(lexer.Newline) && !parser.check(lexer.RightParenthesis) && !parser.check(lexer.Colon) && !parser.check(lexer.EOF) {
+	for !parser.check(lexer.Newline) && !parser.check(lexer.RightParenthesis) && !parser.check(lexer.Colon) && !parser.check(lexer.Assign) && !parser.check(lexer.EOF) {
 		element, err := parser.parseExpression()
 		if err != nil {
 			return nil, err
@@ -236,14 +236,38 @@ func (parser *Parser) parsePrimary() (ast.Expression, error) {
 			}
 		case lexer.LeftBracket:
 			open := parser.advance()
-			index, err := parser.parseExpression()
-			if err != nil {
-				return nil, err
+			var start ast.Expression
+			var err error
+			if !parser.check(lexer.Colon) {
+				start, err = parser.parseExpression()
+				if err != nil {
+					return nil, err
+				}
+			}
+			if !parser.match(lexer.Colon) {
+				if _, err := parser.expect(lexer.RightBracket); err != nil {
+					return nil, err
+				}
+				expression = &ast.IndexExpression{Pos: positionOf(open), Collection: expression, Index: start}
+				continue
+			}
+			var stop, step ast.Expression
+			if !parser.check(lexer.Colon) && !parser.check(lexer.RightBracket) {
+				stop, err = parser.parseExpression()
+				if err != nil {
+					return nil, err
+				}
+			}
+			if parser.match(lexer.Colon) && !parser.check(lexer.RightBracket) {
+				step, err = parser.parseExpression()
+				if err != nil {
+					return nil, err
+				}
 			}
 			if _, err := parser.expect(lexer.RightBracket); err != nil {
 				return nil, err
 			}
-			expression = &ast.IndexExpression{Pos: positionOf(open), Collection: expression, Index: index}
+			expression = &ast.SliceExpression{Pos: positionOf(open), Collection: expression, Start: start, Stop: stop, Step: step}
 		case lexer.Dot:
 			dot := parser.advance()
 			name, err := parser.expect(lexer.Identifier)

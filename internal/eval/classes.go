@@ -44,17 +44,21 @@ func evaluateAttributeAssignment(statement *ast.AttributeAssignment, environment
 	if err != nil {
 		return completion{}, err
 	}
-	receiver, err := evaluateExpression(statement.Target.Object, environment)
+	return assignAttribute(statement.Target, value, environment)
+}
+
+func assignAttribute(target *ast.AttributeExpression, value object.Value, environment *object.Environment) (completion, error) {
+	receiver, err := evaluateExpression(target.Object, environment)
 	if err != nil {
 		return completion{}, err
 	}
 	switch receiver := receiver.(type) {
 	case *object.Class:
-		receiver.SetAttribute(statement.Target.Name, value)
+		receiver.SetAttribute(target.Name, value)
 	case *object.Instance:
-		receiver.SetAttribute(statement.Target.Name, value)
+		receiver.SetAttribute(target.Name, value)
 	default:
-		return completion{}, Error{Kind: AttributeError, Message: fmt.Sprintf("%s object has no writable attribute %q", receiver.Type(), statement.Target.Name), Position: statement.Position()}
+		return completion{}, Error{Kind: AttributeError, Message: fmt.Sprintf("%s object has no writable attribute %q", receiver.Type(), target.Name), Position: target.Position()}
 	}
 	return completion{value: object.None{}}, nil
 }

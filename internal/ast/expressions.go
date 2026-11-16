@@ -171,3 +171,12 @@ type TupleLiteral struct {
 
 func (node TupleLiteral) Position() source.Position { return node.Pos }
 func (*TupleLiteral) expressionNode()               {}
+
+type SliceExpression struct {
+	Pos               source.Position
+	Collection        Expression
+	Start, Stop, Step Expression
+}
+
+func (node SliceExpression) Position() source.Position { return node.Pos }
+func (*SliceExpression) expressionNode()               {}

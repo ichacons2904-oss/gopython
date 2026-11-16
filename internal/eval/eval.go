@@ -32,6 +32,8 @@ func evaluateStatement(statement ast.Statement, environment *object.Environment)
 		return completion{value: value}, err
 	case *ast.Assignment:
 		return evaluateAssignment(statement, environment)
+	case *ast.UnpackAssignment:
+		return evaluateUnpackAssignment(statement, environment)
 	case *ast.IndexAssignment:
 		return evaluateIndexAssignment(statement, environment)
 	case *ast.AttributeAssignment:
@@ -97,27 +99,31 @@ func evaluateIndexAssignment(statement *ast.IndexAssignment, environment *object
 	if err != nil {
 		return completion{}, err
 	}
-	collection, key, err := evaluateSubscriptOperands(statement.Target, environment)
+	return assignIndex(statement.Target, value, environment)
+}
+
+func assignIndex(target *ast.IndexExpression, value object.Value, environment *object.Environment) (completion, error) {
+	collection, key, err := evaluateSubscriptOperands(target, environment)
 	if err != nil {
 		return completion{}, err
 	}
 	switch collection := collection.(type) {
 	case *object.List:
-		index, err := listIndex(key, statement.Target)
+		index, err := listIndex(key, target)
 		if err != nil {
 			return completion{}, err
 		}
 		if !collection.Set(index, value) {
-			return completion{}, Error{Kind: IndexError, Message: "list assignment index out of range", Position: statement.Target.Position()}
+			return completion{}, Error{Kind: IndexError, Message: "list assignment index out of range", Position: target.Position()}
 		}
 	case *object.Tuple:
-		return completion{}, Error{Kind: TypeError, Message: "tuple does not support item assignment", Position: statement.Target.Position()}
+		return completion{}, Error{Kind: TypeError, Message: "tuple does not support item assignment", Position: target.Position()}
 	case *object.Dict:
 		if !collection.Set(key, value) {
-			return completion{}, unhashableError(key, statement.Target.Index.Position())
+			return completion{}, unhashableError(key, target.Index.Position())
 		}
 	default:
-		return completion{}, notSubscriptableError(collection, statement.Target)
+		return completion{}, notSubscriptableError(collection, target)
 	}
 	return completion{value: object.None{}}, nil
 }

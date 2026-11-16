@@ -44,6 +44,8 @@ func evaluateExpression(expression ast.Expression, environment *object.Environme
 		return object.NewTuple(elements), nil
 	case *ast.DictLiteral:
 		return evaluateDictLiteral(expression, environment)
+	case *ast.SliceExpression:
+		return evaluateSlice(expression, environment)
 	case *ast.IndexExpression:
 		return evaluateSubscript(expression, environment)
 	case *ast.AttributeExpression:

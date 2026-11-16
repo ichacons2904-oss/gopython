@@ -73,8 +73,18 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 	if parser.match(lexer.Assign) {
 		indexTarget, isIndex := expression.(*ast.IndexExpression)
 		attributeTarget, isAttribute := expression.(*ast.AttributeExpression)
-		if !isIndex && !isAttribute {
+		tupleTarget, isTuple := expression.(*ast.TupleLiteral)
+		if !isIndex && !isAttribute && !isTuple {
 			return nil, Error{Token: parser.current(), Message: "invalid assignment target"}
+		}
+		if isTuple {
+			for _, target := range tupleTarget.Elements {
+				switch target.(type) {
+				case *ast.Identifier, *ast.IndexExpression, *ast.AttributeExpression:
+				default:
+					return nil, Error{Token: parser.current(), Message: "invalid unpacking target"}
+				}
+			}
 		}
 		value, err := parser.parseTupleExpression()
 		if err != nil {
@@ -82,6 +92,9 @@ func (parser *Parser) parseStatement() (ast.Statement, error) {
 		}
 		if _, err := parser.expect(lexer.Newline); err != nil {
 			return nil, err
+		}
+		if isTuple {
+			return &ast.UnpackAssignment{Pos: tupleTarget.Position(), Targets: tupleTarget.Elements, Value: value}, nil
 		}
 		if isIndex {
 			return &ast.IndexAssignment{Pos: indexTarget.Position(), Target: indexTarget, Value: value}, nil
