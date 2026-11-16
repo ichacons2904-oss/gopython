@@ -64,7 +64,17 @@ func invokeBuiltin(builtin object.Builtin, arguments []object.Value, position so
 	return value, nil
 }
 
+const maxCallDepth = 1000
+
+var callDepth int
+
 func invokeFunction(function object.Function, arguments []object.Value, position source.Position) (object.Value, error) {
+	if callDepth >= maxCallDepth {
+		return nil, Error{Kind: RecursionError, Message: "maximum recursion depth exceeded", Position: position}
+	}
+	callDepth++
+	defer func() { callDepth-- }()
+
 	if len(arguments) != len(function.Parameters) {
 		return nil, Error{
 			Kind: TypeError,

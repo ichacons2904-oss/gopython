@@ -77,8 +77,8 @@ Lo que no está soportado da un error de sintaxis, `NameError`, `TypeError` o
 | Built-ins | `print`, `range`, `len`, `list`, `tuple`, `dict` | `str`, `int`, `float`, `bool`, `min`, `max`, `sum`, `sorted`, `input`, `open` |
 | Módulos | un solo archivo | `import`, `__name__` |
 
-Una recursión infinita no da `RecursionError`: termina el proceso con un stack
-overflow de Go.
+Más de 1000 llamadas anidadas dan `RecursionError`, como en CPython. El límite
+es fijo: no hay `sys.setrecursionlimit`.
 
 ## Funcionalidades implementadas
 
@@ -255,7 +255,7 @@ construye instancias y busca atributos en las bases.
 
 Están disponibles `print`, `range`, `len`, `list`, `tuple` y `dict`. Los errores indican
 línea y columna; incluyen, entre otros, `NameError`, `TypeError`, `IndexError`,
-`KeyError` y `AttributeError`. El lenguaje aún no permite capturar excepciones.
+`KeyError`, `AttributeError` y `RecursionError`. El lenguaje aún no permite capturar excepciones.
 
 **Implementación:** `internal/builtin` registra las funciones incorporadas y el
 evaluator propaga los errores con sus posiciones de origen.

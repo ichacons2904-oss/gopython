@@ -19,6 +19,7 @@ const (
 	MemoryError       ErrorKind = "MemoryError"
 	AttributeError    ErrorKind = "AttributeError"
 	ValueError        ErrorKind = "ValueError"
+	RecursionError    ErrorKind = "RecursionError"
 )
 
 type Error struct {
