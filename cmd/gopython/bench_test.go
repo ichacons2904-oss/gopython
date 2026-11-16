@@ -8,9 +8,6 @@ import (
 	"testing"
 )
 
-// Run with -cpuprofile to see where a program spends its time:
-//
-//	go test ./cmd/gopython -run '^$' -bench 'Programs/fib' -cpuprofile cpu.out
 func BenchmarkPrograms(b *testing.B) {
 	paths, err := filepath.Glob("../../benchmarks/programs/*.py")
 	if err != nil || len(paths) == 0 {

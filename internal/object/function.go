@@ -17,7 +17,6 @@ func (value Function) Display() string {
 	return "<function " + value.Name + ">"
 }
 
-// UserBoundMethod keeps the original function and receiver even if their names change.
 type UserBoundMethod struct {
 	Receiver *Instance
 	Function Function

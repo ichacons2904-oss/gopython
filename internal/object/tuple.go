@@ -1,6 +1,5 @@
 package object
 
-// Tuple owns its slice, but its elements may themselves be mutable values.
 type Tuple struct{ elements []Value }
 
 func NewTuple(elements []Value) *Tuple { return &Tuple{elements: append([]Value(nil), elements...)} }
