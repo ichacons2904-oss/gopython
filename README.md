@@ -89,8 +89,9 @@ print(items + [5])     # [1, 'dos', 4, 5]
 
 Los métodos implementados son `append`, `extend`, `insert`, `remove`, `pop`,
 `clear` y `copy`. `list()` crea una lista vacía o copia una lista, tupla, rango o las
-claves de un diccionario. No se soportan slices ni comprehensions; los strings
-todavía no son iterables.
+claves de un diccionario. Los slices `items[inicio:fin:paso]` devuelven una
+lista nueva y admiten índices negativos y paso negativo. No se soportan
+comprehensions; los strings todavía no son iterables ni admiten slices.
 
 **Implementación:** el AST representa literales y acceso por índice;
 `internal/object` almacena los elementos y el evaluator maneja las operaciones
@@ -111,9 +112,12 @@ print(pair + single)     # (1, 2, 1)
 print(tuple([3, 4]))     # (3, 4)
 ```
 
-`tuple()` acepta los iterables soportados por gopython. Las tuplas aún no se
-admiten como claves de diccionario, incluso si sus elementos son hashables. No
-se soportan unpacking, slices ni comparaciones de orden entre tuplas.
+`tuple()` acepta los iterables soportados por gopython. Los slices de una tupla
+devuelven otra tupla. La asignación múltiple desempaqueta cualquier iterable en
+nombres, índices o atributos (`a, b = b, a`), con `ValueError` si no coincide la
+cantidad; no se admite en el `for` (`for k, v in ...`) ni con `*resto`. Las
+tuplas aún no se admiten como claves de diccionario, incluso si sus elementos
+son hashables. No hay comparaciones de orden entre tuplas.
 
 **Implementación:** el parser distingue las comas de tuplas de las que separan
 argumentos o elementos; el runtime conserva sus elementos y el evaluator
@@ -242,7 +246,7 @@ Nuestras observaciones e interpretación de los resultados:
 
 ## Diferencias con CPython
 
-Los enteros son de 64 bits y, si una cuenta se pasa, dan la vuelta en vez de crecer como en Python. `True + 1` da error (en Python `bool` es un `int`), algunos errores de built-ins salen como `RuntimeError`, `keys()` y `values()` devuelven listas nuevas en vez de vistas, no hay `items()` porque no hay tuplas, modificar un diccionario mientras se lo recorre no da error, una expresión entre paréntesis no puede seguir en otra línea, y los mensajes de error tienen formato propio.
+Los enteros son de 64 bits y, si una cuenta se pasa, dan la vuelta en vez de crecer como en Python. `True + 1` da error (en Python `bool` es un `int`), algunos errores de built-ins salen como `RuntimeError`, `keys()` y `values()` devuelven listas nuevas en vez de vistas, no hay `items()`, modificar un diccionario mientras se lo recorre no da error, una expresión entre paréntesis no puede seguir en otra línea, y los mensajes de error tienen formato propio.
 
 ## REPL
 
