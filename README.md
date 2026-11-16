@@ -69,7 +69,7 @@ print(counter())       # 2
 
 **Implementación:** `Function` guarda los parámetros, el cuerpo y el entorno
 donde se definió; cada llamada crea un entorno nuevo. La búsqueda de nombres es
-dinámica y tiene diferencias conocidas con Python; ver el TODO al final.
+dinámica y tiene diferencias conocidas con Python; ver [Resolución de scopes](#resolución-de-scopes).
 
 ### 4. Listas
 
@@ -342,13 +342,14 @@ Para abrir el REPL en el contenedor:
 docker run --rm -it --entrypoint /gopython gopython
 ```
 
-## TODO: resolución de scopes
+## Resolución de scopes
 
-La búsqueda de nombres en gopython es dinámica. Está pendiente decidir cuáles de
-sus diferencias con Python conservar como parte del dialecto y cuáles cambiar.
-Una pasada de resolución antes de la evaluación permitiría clasificar nombres y
-validar declaraciones sin depender del orden de ejecución. Los entornos podrían
-seguir usando mapas; optimizar los accesos es una decisión independiente.
+La búsqueda de nombres en gopython es dinámica: cada nombre se busca por la
+cadena de entornos en el momento de leerlo. Decidimos conservar las diferencias
+con Python que esto produce como parte del dialecto, y no corregirlas. Si más
+adelante agregamos una pasada de resolución antes de la evaluación, sería solo
+para acelerar el acceso a las variables y tendría que conservar este
+comportamiento.
 
 ### Referencia: LEGB en Python
 
@@ -380,7 +381,7 @@ comportamiento del dialecto; no se propone cambiarla solo por diferir de Python.
 Las funciones incorporadas se registran en el entorno global actual, no en un
 scope built-in separado como en Python.
 
-Casos que hoy difieren de CPython y que sirven para decidir el alcance del TODO:
+Casos que difieren de CPython:
 
 - **Lectura de un local antes de asignarlo:**
 
