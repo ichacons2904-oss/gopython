@@ -262,7 +262,7 @@ evaluator propaga los errores con sus posiciones de origen.
 
 ## Diferencias con Lox
 
-Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto un programa al ejecutarse, y en cómo cambiaron la implementación. Los ejemplos de Python los corrimos en CPython 3.15 y en gopython. Como referencia de Lox usamos [plox](https://github.com/FdelMazo/plox), el intérprete de la cátedra: la rama `main`, que ya tiene resolver, y la rama `tree-walk` para el intérprete sin resolver. plox no tiene clases; para clases tomamos el Lox del libro.
+Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto un programa al ejecutarse, y en cómo cambiaron la implementación. Los ejemplos de Python los corrimos en CPython 3.15 y en gopython. Como referencia de Lox usamos [plox](https://github.com/FdelMazo/plox), el intérprete de la cátedra: la rama `main`, que ya tiene resolver, y la rama `tree-walk` para el intérprete sin resolver. plox no tiene clases; para clases tomamos el Lox de [*Crafting Interpreters*](https://craftinginterpreters.com/), de Robert Nystrom (capítulos 12 y 13), el libro en el que se basa plox.
 
 ### Scope y resolución de nombres
 
