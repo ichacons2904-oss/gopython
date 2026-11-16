@@ -241,8 +241,65 @@ Nuestras observaciones e interpretación de los resultados:
 
 ## Diferencias con Lox
 
-- **Lenguaje:** bloques por indentación en vez de llaves; scope de función en vez de bloque; `int` y `float` separados; `0` y `""` son falsos; el `for` recorre un iterable; `print` es una función.
-- **Implementación:** en vez del patrón Visitor usamos un `switch` sobre el tipo de cada nodo. `return`, `break` y `continue` no son excepciones, porque Go no las tiene: cada sentencia devuelve cómo terminó. El lexer genera tokens de indentación con una pila de niveles. No tenemos resolver, así que `nonlocal` y `global` se resuelven al ejecutar.
+Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto un programa al ejecutarse, y en cómo cambiaron la implementación. Las sintácticas (indentación, `def`, `None`, sin `;`) son estéticas. Lox es el del libro *Crafting Interpreters* y el de [plox](https://github.com/FdelMazo/plox); los ejemplos de Python los corrimos en CPython 3.15 y en gopython.
+
+### Scope y resolución de nombres
+
+- **El scope es la función, no el bloque.** `if`, `while` y `for` no crean scope: una variable asignada adentro sigue viva al salir, incluida la del `for`. *Implementación:* hay un entorno nuevo por llamada a función y no por bloque, como en jlox.
+- **Asignar es declarar.** En Lox, `x = 2` sube por la cadena de entornos hasta encontrar `x`. En Python siempre crea o actualiza `x` en el scope actual, así que para modificar una variable de afuera hay que declararlo con `nonlocal` o `global`. Sin `nonlocal`, el contador clásico de closures en CPython da `UnboundLocalError`. *Implementación:* `Environment.Set` escribe siempre en el entorno actual; `nonlocal x` y `global x` registran una redirección de `x` al entorno de la función contenedora o al global.
+- **El "closure bug".** Traducimos el ejemplo del capítulo 11 usando una función en lugar del bloque:
+
+  ```python
+  a = "global"
+  def block():
+      def show_a():
+          print(a)
+      show_a()
+      a = "block"
+      show_a()
+  block()
+  ```
+
+  | Intérprete | Salida |
+  | --- | --- |
+  | Lox sin resolver (capítulo 10) | `global`, `block` (el bug) |
+  | Lox con resolver (capítulo 11) | `global`, `global` |
+  | CPython | `NameError` en la primera llamada |
+  | gopython | `global`, `block` |
+
+  En Python no es un bug porque un scope no puede ganar una variable a mitad de camino, como pasa con `var a` en un bloque de Lox. Antes de ejecutar, el compilador decide qué nombres son locales de cada función: como `block` asigna `a`, `a` es local de `block` desde la primera línea, y en la primera llamada todavía no tiene valor. Python resuelve de forma estática *a qué variable* se refiere un nombre, como el resolver de Lox, y lee *su valor* al ejecutar (*late binding*). Por eso, si se reasigna una global que ya existe, la función ve el valor nuevo: ese caso (`LATE BINDING` en `real-tests/2-functions.py`) da lo mismo en Lox, CPython y gopython.
+
+  gopython no tiene resolver: busca cada nombre por la cadena de entornos al leerlo. Por eso, en el ejemplo de arriba se comporta como el Lox del capítulo 10, y no da `UnboundLocalError`. Es una diferencia que aceptamos como parte del dialecto (ver [Resolución de scopes](#resolución-de-scopes)).
+- **Closures dentro de un bucle.** Capturan la variable, no su valor: funciones creadas en un `for` ven todas el último valor. En Lox pasa lo mismo, porque el `for` declara la variable una sola vez.
+- **El cuerpo de una clase no es un scope para sus métodos.** Un método no ve los nombres del cuerpo de su clase; hay que escribir `self.x`. *Implementación:* el cuerpo de la clase se ejecuta en un entorno marcado como *de clase*, y las funciones definidas ahí guardan como closure el entorno de afuera de la clase.
+
+### Qué es expresión y qué es statement
+
+| Construcción | Lox | Python | gopython |
+| --- | --- | --- | --- |
+| Asignación | expresión (`print a = 2;` imprime `2`) | statement | statement |
+| `a = b = 1` | expresión asociativa a derecha | statement especial | no implementado |
+| Asignar dentro de una expresión | la asignación misma | `:=` | no implementado |
+| `print` | statement | función, un valor más | función |
+| Función anónima | no hay | `lambda` | no implementado |
+| Condicional como expresión | no hay | `a if c else b` | no implementado |
+| `break` y `continue` | no hay | sí | sí |
+
+*Implementación:* las asignaciones son nodos de statement. El parser lee una expresión y, si después viene `=`, verifica que sea un destino válido (nombre, índice, atributo o tupla). Es el mismo truco del *l-value* de Lox, pero solo al principio de un statement; por eso `print(x = 1)` es un error de sintaxis. `print` es un built-in registrado en el entorno global: se puede guardar en una variable o pasar como argumento. `return`, `break` y `continue` no son excepciones, como en jlox, porque Go no las tiene: cada sentencia devuelve cómo terminó, y los bucles y las llamadas lo inspeccionan.
+
+### Valores, iteración y objetos
+
+- **Qué es falso:** en Lox solo `nil` y `false`. En Python también `0`, `0.0`, `""`, `[]`, `{}` y `()`.
+- **Números:** Lox tiene solo doubles. Python separa `int` y `float`: `/` siempre da float, y `//` y `%` redondean hacia abajo. *Implementación:* dos tipos con promoción a float, y funciones propias para `//` y `%`, porque las de Go truncan hacia cero.
+- **Igualdad y orden:** en Lox, valores de distinto tipo nunca son iguales. En Python, `1 == 1.0`, las colecciones se comparan por contenido, `"a" < "b"` es válido y `a < b < c` se encadena evaluando `b` una sola vez. *Implementación:* la comparación encadenada es un nodo con una lista de operadores, y la igualdad estructural detecta ciclos.
+- **Iteración:** el `for` de Lox se traduce a un `while`. El de Python le pide un iterador a cualquier iterable. *Implementación:* interfaces `Iterable` e `Iterator`, que implementan rangos, listas, tuplas y diccionarios.
+- **Colecciones:** Lox no tiene. En Python, listas y diccionarios son mutables y se comparten por referencia (`b = a` no copia), las tuplas no se pueden modificar, y las claves de un diccionario tienen que ser hasheables.
+- **Clases:** Lox usa `this` implícito, `init` y herencia simple con `super`. Python usa `self` explícito, `__init__`, atributos de clase compartidos, un cuerpo de clase que puede tener cualquier código, y herencia múltiple. Un método es una función común que se liga a la instancia al leerla (`obj.metodo`). *Implementación:* jlox liga el método con un entorno que contiene `this`; gopython devuelve un objeto que guarda la función y la instancia, y al llamarlo agrega la instancia como primer argumento.
+- **Errores:** Python tiene excepciones que se pueden capturar. gopython implementa los tipos de error, pero no `try`/`except`, así que un error termina el programa, como en Lox.
+
+### Implementación
+
+Como jlox, gopython es un intérprete *tree-walking* con un parser descendente recursivo, y no compila a bytecode. En vez del patrón Visitor usa un `switch` sobre el tipo de cada nodo. El lexer genera tokens `INDENT` y `DEDENT` con una pila de niveles de indentación. No tiene resolver: los nombres se buscan al ejecutar y `nonlocal`/`global` se resuelven con redirecciones.
 
 ## Diferencias con CPython
 
