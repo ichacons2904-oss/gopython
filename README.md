@@ -184,9 +184,7 @@ evaluator propaga los errores con sus posiciones de origen.
 
 ## Qué corre y qué no
 
-Una guía rápida para saber si un programa va a correr. No es exhaustiva; el
-detalle está en la
-[especificación](../lengcomp/wiki/03-especificacion-subconjunto.md#estado-de-implementación).
+Una guía rápida para saber si un programa va a correr. No es exhaustiva.
 Lo que no está soportado da un error de sintaxis, `NameError`, `TypeError` o
 `AttributeError`; nunca se ignora en silencio.
 
