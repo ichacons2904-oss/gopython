@@ -224,6 +224,7 @@ internal/lexer/    tokens e indentación significativa
 internal/ast/      nodos del AST
 internal/parser/   parser descendente recursivo
 internal/object/   valores, funciones y entornos
+internal/source/   posiciones (línea y columna) para los errores
 internal/builtin/  print, range, len, list, tuple y dict
 internal/eval/     evaluador tree-walking
 internal/repl/     loop interactivo
@@ -234,7 +235,7 @@ examples/          programas de ejemplo
 
 ## Tests de la cátedra
 
-Tradujimos los cinco programas de `plox/real-tests` a Python y agregamos casos para floats, closures, listas y diccionarios.
+Tradujimos los cinco programas de `plox/real-tests` a Python y agregamos siete más: números, closures, listas, diccionarios, atributos de clase, instancias y tuplas. `python3 real-tests/script.py` corre los doce con `go run`; también acepta un intérprete como argumento (`python3 real-tests/script.py bin/gopython`).
 
 Como Python no tiene scope de bloque, los bloques de Lox pasaron a ser funciones, y `a < b == c` necesita paréntesis porque en Python las comparaciones se encadenan.
 
@@ -244,7 +245,7 @@ Como Python no tiene scope de bloque, los bloques de Lox pasaron a ser funciones
 
 ## Benchmarks
 
-En la siguiente tabla mostramos el tiempo de nuestra implementacion de gopython, comparandolos con los de otras implementaciones. Fueron corridos en un Apple M4, generado con `benchmarks/compare.py`:
+En la siguiente tabla mostramos el tiempo de nuestra implementación de gopython, comparándolo con el de otras implementaciones. Fueron corridos en un Apple M4, generado con `benchmarks/compare.py`:
 
 | Programa | gopython | gpython | RustPython | CPython | PyPy |
 | --- | --- | --- | --- | --- | --- |
@@ -336,7 +337,7 @@ Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto
 | Condicional como expresión | no hay | `a if c else b` | no implementado |
 | `break` y `continue` | no hay | sí | sí |
 
-*Implementación:* las asignaciones son nodos de statement. El parser lee una expresión y, si después viene `=`, verifica que sea un destino válido (nombre, índice, atributo o tupla). Es el mismo truco del *l-value* de `assignment()` en plox, pero solo al principio de un statement; por eso `print(x = 1)` es un error de sintaxis. `print` es un built-in registrado en el entorno global: se puede guardar en una variable o pasar como argumento. plox implementa `return` lanzando una excepción de Python (`ReturnValue`). Go no tiene excepciones, así que en gopython `return`, `break` y `continue` no lo son: cada sentencia devuelve cómo terminó, y los bucles y las llamadas lo inspeccionan.
+*Implementación:* las asignaciones son nodos de statement. El parser lee una expresión y, si después viene `=`, verifica que sea un destino válido (nombre, índice, atributo o tupla). Es el mismo truco del *l-value* de `assignment()` en plox, pero solo al principio de un statement; por eso `if x = 1:` es un error de sintaxis, igual que en CPython. `print` es un built-in registrado en el entorno global: se puede guardar en una variable o pasar como argumento. plox implementa `return` lanzando una excepción de Python (`ReturnValue`). Go no tiene excepciones, así que en gopython `return`, `break` y `continue` no lo son: cada sentencia devuelve cómo terminó, y los bucles y las llamadas lo inspeccionan.
 
 ### Valores, iteración y objetos
 
