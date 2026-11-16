@@ -2,6 +2,84 @@
 
 Un intérprete de un subconjunto de Python, escrito en Go. Lee el código, lo tokeniza, arma un AST y lo recorre para ejecutarlo (tree-walking).
 
+## Cómo ejecutarlo
+
+Hace falta Go 1.27 o posterior.
+
+```bash
+go build -o bin/gopython ./cmd/gopython
+bin/gopython examples/informe.py    # ejecutar un archivo
+bin/gopython                        # abrir el REPL
+```
+
+Sin compilar, `go run ./cmd/gopython archivo.py` hace lo mismo.
+
+### Programas de ejemplo
+
+Los dos dan la misma salida que CPython.
+
+- `examples/informe.py` muestra, para cada número del 1 al 20, su numeral romano, si es primo y cuántos pasos de Collatz necesita. Usa recursión, closures, floats y strings.
+- `examples/pedidos.py` arma los pedidos de una librería y descuenta el stock. Usa clases con herencia y atributos de clase, listas, tuplas, diccionarios, asignación múltiple, slices y aliasing (`historial = pedidos` no copia la lista).
+
+### REPL
+
+`gopython` abre un intérprete interactivo, donde las variables y
+funciones se conservan entre entradas, las expresiones muestran su valor y los errores no cierran la sesión. Con Ctrl-D se sale.
+
+```text
+>>> def double(x):
+...     return x * 2
+...
+>>> double(21)
+42
+>>> "hola"
+'hola'
+>>> missing
+NameError at 1:1: name "missing" is not defined
+```
+
+### Docker
+
+```bash
+docker build -t gopython .
+docker run --rm gopython            # corre examples/functions.py
+```
+
+Para ejecutar otro archivo del host:
+
+```bash
+docker run --rm -v "$PWD:/workspace" gopython /workspace/path/to/program.py
+```
+
+Para abrir el REPL en el contenedor:
+
+```bash
+docker run --rm -it --entrypoint /gopython gopython
+```
+
+## Qué corre y qué no
+
+Una guía rápida para saber si un programa va a correr. No es exhaustiva.
+Lo que no está soportado da un error de sintaxis, `NameError`, `TypeError` o
+`AttributeError`; nunca se ignora en silencio.
+
+| Tema | Corre | No corre |
+| --- | --- | --- |
+| Valores | `int` (64 bits), `float`, `str`, `bool`, `None` | enteros grandes (`2 ** 70`), `1e3`, `0xff`, strings con triple comilla, sets |
+| Operadores | `+ - * / // %`, comparaciones encadenadas, `and`/`or`/`not`, `in`/`not in` | `**`, `+=` y demás asignaciones aumentadas, `is`, operadores de bits, `:=`, `a if c else b` |
+| Control de flujo | `if`/`elif`/`else`, `while`, `for`, `break`, `continue`, `pass`, bloques de una línea | `else` en bucles, `try`/`except`/`raise`, `with`, `assert`, `del`, `;` |
+| Funciones | parámetros posicionales, recursión, closures, `nonlocal`, `global`, funciones como valores | argumentos por defecto o con nombre (`print(x, sep="")` incluido), `*args`, `lambda`, generadores (`yield`), decoradores, docstrings |
+| Strings | literales con escapes, `+`, comparación, `len` | indexar, slices, recorrer, `in`, `*`, métodos (`upper`, `split`, ...), f-strings |
+| Listas y tuplas | literales, índices negativos, slices, `+`, `*`, `append`, `extend`, `insert`, `remove`, `pop`, `clear`, `copy` | `sort`, `index`, `count`, comprensiones, literales en varias líneas |
+| Diccionarios | literales, `d[k]`, `get`, `keys`, `values`, `pop`, `update`, `clear`, `copy` | `items()`, tuplas como claves, comprensiones |
+| Asignación | nombres, índices, atributos, `a, b = b, a` | `a = b = 1`, `for k, v in ...`, `a, *resto = ...` |
+| Clases | atributos, métodos, `__init__`, herencia múltiple | `super()`, `isinstance`, `type`, métodos especiales como `__str__` (se pueden definir, pero no se usan) |
+| Built-ins | `print`, `range`, `len`, `list`, `tuple`, `dict` | `str`, `int`, `float`, `bool`, `min`, `max`, `sum`, `sorted`, `input`, `open` |
+| Módulos | un solo archivo | `import`, `__name__` |
+
+Una recursión infinita no da `RecursionError`: termina el proceso con un stack
+overflow de Go.
+
 ## Funcionalidades implementadas
 
 gopython interpreta un subconjunto de Python. Los ejemplos siguientes muestran
@@ -182,113 +260,6 @@ línea y columna; incluyen, entre otros, `NameError`, `TypeError`, `IndexError`,
 **Implementación:** `internal/builtin` registra las funciones incorporadas y el
 evaluator propaga los errores con sus posiciones de origen.
 
-## Qué corre y qué no
-
-Una guía rápida para saber si un programa va a correr. No es exhaustiva.
-Lo que no está soportado da un error de sintaxis, `NameError`, `TypeError` o
-`AttributeError`; nunca se ignora en silencio.
-
-| Tema | Corre | No corre |
-| --- | --- | --- |
-| Valores | `int` (64 bits), `float`, `str`, `bool`, `None` | enteros grandes (`2 ** 70`), `1e3`, `0xff`, strings con triple comilla, sets |
-| Operadores | `+ - * / // %`, comparaciones encadenadas, `and`/`or`/`not`, `in`/`not in` | `**`, `+=` y demás asignaciones aumentadas, `is`, operadores de bits, `:=`, `a if c else b` |
-| Control de flujo | `if`/`elif`/`else`, `while`, `for`, `break`, `continue`, `pass`, bloques de una línea | `else` en bucles, `try`/`except`/`raise`, `with`, `assert`, `del`, `;` |
-| Funciones | parámetros posicionales, recursión, closures, `nonlocal`, `global`, funciones como valores | argumentos por defecto o con nombre (`print(x, sep="")` incluido), `*args`, `lambda`, generadores (`yield`), decoradores, docstrings |
-| Strings | literales con escapes, `+`, comparación, `len` | indexar, slices, recorrer, `in`, `*`, métodos (`upper`, `split`, ...), f-strings |
-| Listas y tuplas | literales, índices negativos, slices, `+`, `*`, `append`, `extend`, `insert`, `remove`, `pop`, `clear`, `copy` | `sort`, `index`, `count`, comprensiones, literales en varias líneas |
-| Diccionarios | literales, `d[k]`, `get`, `keys`, `values`, `pop`, `update`, `clear`, `copy` | `items()`, tuplas como claves, comprensiones |
-| Asignación | nombres, índices, atributos, `a, b = b, a` | `a = b = 1`, `for k, v in ...`, `a, *resto = ...` |
-| Clases | atributos, métodos, `__init__`, herencia múltiple | `super()`, `isinstance`, `type`, métodos especiales como `__str__` (se pueden definir, pero no se usan) |
-| Built-ins | `print`, `range`, `len`, `list`, `tuple`, `dict` | `str`, `int`, `float`, `bool`, `min`, `max`, `sum`, `sorted`, `input`, `open` |
-| Módulos | un solo archivo | `import`, `__name__` |
-
-Una recursión infinita no da `RecursionError`: termina el proceso con un stack
-overflow de Go.
-
-## Cómo probarlo
-
-```bash
-go test ./...
-go run ./cmd/gopython examples/informe.py   # ejecutar un archivo
-go run ./cmd/gopython                       # REPL
-python3 real-tests/script.py                # tests de la cátedra
-python3 benchmarks/compare.py               # benchmarks 
-```
-
-
-## Layout
-
-```text
-cmd/gopython/      CLI: ejecuta un archivo o abre el REPL
-internal/lexer/    tokens e indentación significativa
-internal/ast/      nodos del AST
-internal/parser/   parser descendente recursivo
-internal/object/   valores, funciones y entornos
-internal/source/   posiciones (línea y columna) para los errores
-internal/builtin/  print, range, len, list, tuple y dict
-internal/eval/     evaluador tree-walking
-internal/repl/     loop interactivo
-real-tests/        tests de la cátedra
-benchmarks/        comparación con otras implementaciones
-examples/          programas de ejemplo
-```
-
-## Tests de la cátedra
-
-Tradujimos los cinco programas de `plox/real-tests` a Python y agregamos siete más: números, closures, listas, diccionarios, atributos de clase, instancias y tuplas. `python3 real-tests/script.py` corre los doce con `go run`; también acepta un intérprete como argumento (`python3 real-tests/script.py bin/gopython`).
-
-Como Python no tiene scope de bloque, los bloques de Lox pasaron a ser funciones, y `a < b == c` necesita paréntesis porque en Python las comparaciones se encadenan.
-
-## Correr un programa de ejemplo
-
-`examples/informe.py` muestra, para cada número del 1 al 20, su numeral romano, si es primo y cuántos pasos de Collatz necesita. Usa recursión, closures, floats y strings, y da la misma salida que CPython.
-
-## Benchmarks
-
-En la siguiente tabla mostramos el tiempo de nuestra implementación de gopython, comparándolo con el de otras implementaciones. Fueron corridos en un Apple M4, generado con `benchmarks/compare.py`:
-
-| Programa | gopython | gpython | RustPython | CPython | PyPy |
-| --- | --- | --- | --- | --- | --- |
-| arranque | 2 ms | 1.17x | 9.63x | 6.21x | 7.66x |
-| bucles | 159 ms | 1.27x | 2.05x | 0.93x | 0.12x |
-| strings | 218 ms | 1.17x | 2.19x | 0.88x | 0.18x |
-| floats | 334 ms | 1.19x | 2.54x | 0.81x | 0.08x |
-| listas y diccionarios | 222 ms | — | 1.35x | 0.47x | 0.13x |
-| closures | 315 ms | 0.97x | 1.37x | 0.37x | 0.06x |
-| `fib` | 373 ms | 1.05x | 1.60x | 0.17x | 0.08x |
-
-Tiempo medio de gopython; para el resto, cuántas veces ese tiempo (menos de 1 es más rápido que gopython). 2026-11-16, CPython 3.15.0, PyPy 8.0.0, RustPython 0.5.0 y gpython 0.2.0; detalle en [`benchmarks/results/comparison.md`](benchmarks/results/comparison.md). gpython no corre `lists_dicts.py` porque sus diccionarios solo aceptan strings como claves.
-
-### Dónde se va el tiempo
-
-Para respaldar las conclusiones con datos, cada programa también se puede correr como benchmark de Go y perfilar:
-
-```bash
-go test ./cmd/gopython -run '^$' -bench Programs -benchmem
-go test ./cmd/gopython -run '^$' -bench 'Programs/fib$' -cpuprofile cpu.out
-go tool pprof -top cpu.out
-```
-
-Las asignaciones de memoria de `-benchmem` son exactas:
-
-| Programa | Qué repite | Asignaciones | Por repetición |
-| --- | --- | --- | --- |
-| `fib` | 2.692.537 llamadas | 10,8 millones (1 GB) | 4 asignaciones, 384 B |
-| closures | 2.000.000 llamadas | 12,0 millones (704 MB) | 6 asignaciones, 352 B |
-| floats | 3.000.000 iteraciones | 18,0 millones | 6 asignaciones |
-| bucles | 2.250.000 iteraciones | 6,4 millones | 2,8 asignaciones |
-
-En `fib`, la mitad de las asignaciones son de `NewEnvironment` (el struct del entorno y su mapa), un cuarto es el slice de argumentos y el otro cuarto aparece al escribir el parámetro en el mapa. El perfil de CPU da lo mismo: más de la mitad de las muestras del intérprete pasan por `Environment.Get`/`Set` y por mapas de Go, y una de cada cinco por `NewEnvironment`. En closures, tres de cada cuatro muestras pasan por los métodos de `Environment`, incluida la redirección de `nonlocal`, que se vuelve a armar en cada llamada. En macOS el perfil de CPU de Go es impreciso (la señal de muestreo llega a cualquier hilo), así que tomamos sus porcentajes como orientativos y los cruzamos con las asignaciones.
-
-### Conclusiones
-
-- **Arranque:** gopython y gpython son binarios de Go que leen el archivo y empiezan. CPython, PyPy y RustPython primero cargan su runtime y varios módulos.
-- **Llamadas a funciones, nuestro punto más débil:** en `fib` CPython es casi 6 veces más rápido. Cada llamada nuestra crea un entorno con un mapa, copia los argumentos y busca cada nombre recorriendo mapas (`fib` es global, así que primero falla en el entorno local). CPython decide al compilar qué nombres son locales, les asigna un índice en un arreglo del *frame* y lee `n` sin hashear nada. Una pasada de resolución antes de ejecutar, como el `Resolver` de plox pero con índices en lugar de distancias, atacaría justo esto.
-- **Números:** cada `int` o `float` intermedio se guarda en una interfaz de Go, y eso lo copia al heap (6 asignaciones por iteración en floats). CPython también crea un objeto por número, pero reutiliza los enteros chicos y tiene listas de objetos libres para floats, y por eso solo nos saca entre 7% y 19% en bucles, strings y floats.
-- **Listas y diccionarios:** CPython es el doble de rápido. Nuestro `d[k]` normaliza la clave y la busca en un mapa de Go, y `d.get(k)` crea un método ligado y después busca `get` por nombre en una tabla; CPython tiene instrucciones de bytecode especializadas para subíndices y llamadas a métodos, que evitan crear el objeto intermedio.
-- **gpython y RustPython:** compilan a bytecode, pero implementan Python completo: enteros de precisión arbitraria y operadores que buscan el método según el tipo. Nosotros usamos un `int64` y un `switch`. Les ganamos en casi todo en parte porque hacemos menos; en `fib` y closures estamos parejos con gpython.
-- **PyPy:** su JIT traduce los bucles calientes a código de máquina y especializa por tipo; queda entre 5 y 17 veces más rápido que gopython.
-
 ## Diferencias con Lox
 
 Nos concentramos en las diferencias semánticas, es decir, en qué hace distinto un programa al ejecutarse, y en cómo cambiaron la implementación. Los ejemplos de Python los corrimos en CPython 3.15 y en gopython. Como referencia de Lox usamos [plox](https://github.com/FdelMazo/plox), el intérprete de la cátedra: la rama `main`, que ya tiene resolver, y la rama `tree-walk` para el intérprete sin resolver. plox no tiene clases; para clases tomamos el Lox del libro.
@@ -357,44 +328,7 @@ Como plox, gopython es un intérprete *tree-walking* con un parser descendente r
 
 Los enteros son de 64 bits y, si una cuenta se pasa, dan la vuelta en vez de crecer como en Python. `True + 1` da error (en Python `bool` es un `int`), algunos errores de built-ins salen como `RuntimeError`, `keys()` y `values()` devuelven listas nuevas en vez de vistas, no hay `items()`, modificar un diccionario mientras se lo recorre no da error, una expresión entre paréntesis no puede seguir en otra línea, y los mensajes de error tienen formato propio.
 
-## REPL
-
-`gopython` abre un intérprete interactivo, donde las variables y
-funciones se conservan entre entradas, las expresiones muestran su valor y los errores no cierran la sesión. Con Ctrl-D se sale.
-
-```text
->>> def double(x):
-...     return x * 2
-...
->>> double(21)
-42
->>> "hola"
-'hola'
->>> missing
-NameError at 1:1: name "missing" is not defined
-```
-
-## Docker
-
-```bash
-docker build -t gopython .
-docker run --rm gopython
-```
-
-Para ejecutar otro archivo del host:
-
-```bash
-docker build -t gopython .
-docker run --rm -v "$PWD:/workspace" gopython /workspace/path/to/program.py
-```
-
-Para abrir el REPL en el contenedor:
-
-```bash
-docker run --rm -it --entrypoint /gopython gopython
-```
-
-## Resolución de scopes
+### Resolución de scopes
 
 La búsqueda de nombres en gopython es dinámica: cada nombre se busca por la
 cadena de entornos en el momento de leerlo. Decidimos conservar las diferencias
@@ -403,7 +337,7 @@ adelante agregamos una pasada de resolución antes de la evaluación, sería sol
 para acelerar el acceso a las variables y tendría que conservar este
 comportamiento.
 
-### Referencia: LEGB en Python
+#### Referencia: LEGB en Python
 
 En Python, la resolución léxica de nombres suele describirse como **LEGB**:
 
@@ -475,3 +409,80 @@ Casos que difieren de CPython:
   gopython imprime `started` y luego informa `SyntaxError` al ejecutar la
   declaración. CPython rechaza el programa antes de imprimir, porque no existe
   un binding válido en una función contenedora.
+
+## Benchmarks
+
+En la siguiente tabla mostramos el tiempo de nuestra implementación de gopython, comparándolo con el de otras implementaciones. Fueron corridos en un Apple M4, generado con `benchmarks/compare.py`:
+
+| Programa | gopython | gpython | RustPython | CPython | PyPy |
+| --- | --- | --- | --- | --- | --- |
+| arranque | 2 ms | 1.17x | 9.63x | 6.21x | 7.66x |
+| bucles | 159 ms | 1.27x | 2.05x | 0.93x | 0.12x |
+| strings | 218 ms | 1.17x | 2.19x | 0.88x | 0.18x |
+| floats | 334 ms | 1.19x | 2.54x | 0.81x | 0.08x |
+| listas y diccionarios | 222 ms | — | 1.35x | 0.47x | 0.13x |
+| closures | 315 ms | 0.97x | 1.37x | 0.37x | 0.06x |
+| `fib` | 373 ms | 1.05x | 1.60x | 0.17x | 0.08x |
+
+Tiempo medio de gopython; para el resto, cuántas veces ese tiempo (menos de 1 es más rápido que gopython). 2026-11-16, CPython 3.15.0, PyPy 8.0.0, RustPython 0.5.0 y gpython 0.2.0; detalle en [`benchmarks/results/comparison.md`](benchmarks/results/comparison.md). gpython no corre `lists_dicts.py` porque sus diccionarios solo aceptan strings como claves.
+
+### Dónde se va el tiempo
+
+Para respaldar las conclusiones con datos, cada programa también se puede correr como benchmark de Go y perfilar:
+
+```bash
+go test ./cmd/gopython -run '^$' -bench Programs -benchmem
+go test ./cmd/gopython -run '^$' -bench 'Programs/fib$' -cpuprofile cpu.out
+go tool pprof -top cpu.out
+```
+
+Las asignaciones de memoria de `-benchmem` son exactas:
+
+| Programa | Qué repite | Asignaciones | Por repetición |
+| --- | --- | --- | --- |
+| `fib` | 2.692.537 llamadas | 10,8 millones (1 GB) | 4 asignaciones, 384 B |
+| closures | 2.000.000 llamadas | 12,0 millones (704 MB) | 6 asignaciones, 352 B |
+| floats | 3.000.000 iteraciones | 18,0 millones | 6 asignaciones |
+| bucles | 2.250.000 iteraciones | 6,4 millones | 2,8 asignaciones |
+
+En `fib`, la mitad de las asignaciones son de `NewEnvironment` (el struct del entorno y su mapa), un cuarto es el slice de argumentos y el otro cuarto aparece al escribir el parámetro en el mapa. El perfil de CPU da lo mismo: más de la mitad de las muestras del intérprete pasan por `Environment.Get`/`Set` y por mapas de Go, y una de cada cinco por `NewEnvironment`. En closures, tres de cada cuatro muestras pasan por los métodos de `Environment`, incluida la redirección de `nonlocal`, que se vuelve a armar en cada llamada. En macOS el perfil de CPU de Go es impreciso (la señal de muestreo llega a cualquier hilo), así que tomamos sus porcentajes como orientativos y los cruzamos con las asignaciones.
+
+### Conclusiones
+
+- **Arranque:** gopython y gpython son binarios de Go que leen el archivo y empiezan. CPython, PyPy y RustPython primero cargan su runtime y varios módulos.
+- **Llamadas a funciones, nuestro punto más débil:** en `fib` CPython es casi 6 veces más rápido. Cada llamada nuestra crea un entorno con un mapa, copia los argumentos y busca cada nombre recorriendo mapas (`fib` es global, así que primero falla en el entorno local). CPython decide al compilar qué nombres son locales, les asigna un índice en un arreglo del *frame* y lee `n` sin hashear nada. Una pasada de resolución antes de ejecutar, como el `Resolver` de plox pero con índices en lugar de distancias, atacaría justo esto.
+- **Números:** cada `int` o `float` intermedio se guarda en una interfaz de Go, y eso lo copia al heap (6 asignaciones por iteración en floats). CPython también crea un objeto por número, pero reutiliza los enteros chicos y tiene listas de objetos libres para floats, y por eso solo nos saca entre 7% y 19% en bucles, strings y floats.
+- **Listas y diccionarios:** CPython es el doble de rápido. Nuestro `d[k]` normaliza la clave y la busca en un mapa de Go, y `d.get(k)` crea un método ligado y después busca `get` por nombre en una tabla; CPython tiene instrucciones de bytecode especializadas para subíndices y llamadas a métodos, que evitan crear el objeto intermedio.
+- **gpython y RustPython:** compilan a bytecode, pero implementan Python completo: enteros de precisión arbitraria y operadores que buscan el método según el tipo. Nosotros usamos un `int64` y un `switch`. Les ganamos en casi todo en parte porque hacemos menos; en `fib` y closures estamos parejos con gpython.
+- **PyPy:** su JIT traduce los bucles calientes a código de máquina y especializa por tipo; queda entre 5 y 17 veces más rápido que gopython.
+
+## Desarrollo
+
+```bash
+go test ./...                       # tests de Go
+python3 real-tests/script.py        # tests de la cátedra
+python3 benchmarks/compare.py       # benchmarks
+```
+
+### Tests de la cátedra
+
+Tradujimos los cinco programas de `plox/real-tests` a Python y agregamos siete más: números, closures, listas, diccionarios, atributos de clase, instancias y tuplas. `python3 real-tests/script.py` corre los doce con `go run`; también acepta un intérprete como argumento (`python3 real-tests/script.py bin/gopython`).
+
+Como Python no tiene scope de bloque, los bloques de Lox pasaron a ser funciones, y `a < b == c` necesita paréntesis porque en Python las comparaciones se encadenan.
+
+### Layout
+
+```text
+cmd/gopython/      CLI: ejecuta un archivo o abre el REPL
+internal/lexer/    tokens e indentación significativa
+internal/ast/      nodos del AST
+internal/parser/   parser descendente recursivo
+internal/object/   valores, funciones y entornos
+internal/source/   posiciones (línea y columna) para los errores
+internal/builtin/  print, range, len, list, tuple y dict
+internal/eval/     evaluador tree-walking
+internal/repl/     loop interactivo
+real-tests/        tests de la cátedra
+benchmarks/        comparación con otras implementaciones
+examples/          programas de ejemplo
+```
