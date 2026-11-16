@@ -4,7 +4,7 @@ Un intérprete de un subconjunto de Python, escrito en Go. Lee el código, lo to
 
 ## Funcionalidades implementadas
 
-Gothon interpreta un subconjunto de Python. Los ejemplos siguientes muestran
+gopython interpreta un subconjunto de Python. Los ejemplos siguientes muestran
 las funcionalidades disponibles y las principales partes de la implementación
 que intervienen en cada una.
 
@@ -111,7 +111,7 @@ print(pair + single)     # (1, 2, 1)
 print(tuple([3, 4]))     # (3, 4)
 ```
 
-`tuple()` acepta los iterables soportados por Gothon. Las tuplas aún no se
+`tuple()` acepta los iterables soportados por gopython. Las tuplas aún no se
 admiten como claves de diccionario, incluso si sus elementos son hashables. No
 se soportan unpacking, slices ni comparaciones de orden entre tuplas.
 
@@ -283,7 +283,7 @@ docker run --rm -it --entrypoint /gopython gopython
 
 ## TODO: resolución de scopes
 
-La búsqueda de nombres en Gothon es dinámica. Está pendiente decidir cuáles de
+La búsqueda de nombres en gopython es dinámica. Está pendiente decidir cuáles de
 sus diferencias con Python conservar como parte del dialecto y cuáles cambiar.
 Una pasada de resolución antes de la evaluación permitiría clasificar nombres y
 validar declaraciones sin depender del orden de ejecución. Los entornos podrían
@@ -313,7 +313,7 @@ namespace propio, pero ese namespace no es un scope léxico contenedor para los
 métodos. Por eso una búsqueda simple LEGB no alcanza para describir todos los
 casos de clases anidadas.
 
-En Gothon, una lectura puede encontrar un nombre exterior antes de que una
+En gopython, una lectura puede encontrar un nombre exterior antes de que una
 asignación posterior cree un nombre local. Esta diferencia se acepta como
 comportamiento del dialecto; no se propone cambiarla solo por diferir de Python.
 Las funciones incorporadas se registran en el entorno global actual, no en un
@@ -331,7 +331,7 @@ Casos que hoy difieren de CPython y que sirven para decidir el alcance del TODO:
   show()
   ```
 
-  Gothon imprime `10`; CPython detecta que `x` es local a toda la función y
+  gopython imprime `10`; CPython detecta que `x` es local a toda la función y
   produce `UnboundLocalError` porque todavía no tiene valor.
 
 - **Asignación con el mismo nombre dentro de una clase anidada:**
@@ -346,7 +346,7 @@ Casos que hoy difieren de CPython y que sirven para decidir el alcance del TODO:
   print(outer())
   ```
 
-  Gothon imprime `enclosing`; CPython imprime `global`. El cuerpo de una clase
+  gopython imprime `enclosing`; CPython imprime `global`. El cuerpo de una clase
   tiene reglas de búsqueda propias y no es un scope léxico para sus métodos.
 
 - **Validación anticipada de `nonlocal`:**
@@ -358,6 +358,6 @@ Casos que hoy difieren de CPython y que sirven para decidir el alcance del TODO:
   f()
   ```
 
-  Gothon imprime `started` y luego informa `SyntaxError` al ejecutar la
+  gopython imprime `started` y luego informa `SyntaxError` al ejecutar la
   declaración. CPython rechaza el programa antes de imprimir, porque no existe
   un binding válido en una función contenedora.
